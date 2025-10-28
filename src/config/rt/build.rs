@@ -11,16 +11,16 @@ use crate::{
 use anyhow::{ensure, Context};
 use std::{collections::HashMap, ops::Deref, path::PathBuf};
 
-/// Config options for the cargo build command
+/// Config options for the spago build command
 #[derive(Clone, Debug)]
 pub enum Features {
-    /// Use cargo's `--all-features` flag during compilation.
+    /// Use spago's `--all-features` flag during compilation.
     All,
     /// An explicit list of features to use; might be empty; might include no-default-features.
     Custom {
-        /// Space or comma separated list of cargo features to activate.
+        /// Space or comma separated list of spago features to activate.
         features: Option<String>,
-        /// Use cargo's `--no-default-features` flag during compilation.
+        /// Use spago's `--no-default-features` flag during compilation.
         no_default_features: bool,
     },
 }
@@ -37,13 +37,13 @@ pub struct RtcBuild {
     pub target_parent: PathBuf,
     /// Build in release mode.
     pub release: bool,
-    /// Cargo profile to use instead of the default selection.
-    pub cargo_profile: Option<String>,
+    /// Spago profile to use instead of the default selection.
+    pub spago_profile: Option<String>,
     /// Build without network access
     pub offline: bool,
-    /// Require Cargo.lock and cache are up to date
+    /// Require Spago.lock and cache are up to date
     pub frozen: bool,
-    /// Require Cargo.lock is up to date
+    /// Require Spago.lock is up to date
     pub locked: bool,
     /// The public URL from which assets are to be served.
     pub public_url: BaseUrl,
@@ -54,10 +54,10 @@ pub struct RtcBuild {
     pub final_dist: PathBuf,
     /// The directory used to stage build artifacts during an active build.
     pub staging_dist: PathBuf,
-    /// The configuration of the features passed to cargo.
-    pub cargo_features: Features,
-    /// Optional example to be passed to cargo.
-    pub cargo_example: Option<String>,
+    /// The configuration of the features passed to spago.
+    pub spago_features: Features,
+    /// Optional example to be passed to spago.
+    pub spago_example: Option<String>,
     /// Configuration for automatic application download.
     pub tools: Tools,
     /// Build process hooks.
@@ -166,7 +166,7 @@ impl RtcBuild {
             "Cannot combine --all-features with --no-default-features and/or --features"
         );
 
-        let cargo_features = if build.all_features {
+        let spago_features = if build.all_features {
             Features::All
         } else {
             Features::Custom {
@@ -191,13 +191,13 @@ impl RtcBuild {
             html_output_filename,
             target_parent,
             release: build.release,
-            cargo_profile: build.cargo_profile,
+            spago_profile: build.spago_profile,
             public_url,
             filehash: build.filehash,
             staging_dist,
             final_dist,
-            cargo_features,
-            cargo_example: build.example,
+            spago_features,
+            spago_example: build.example,
             tools,
             hooks,
             inject_autoloader,
@@ -236,13 +236,13 @@ impl RtcBuild {
             html_output_filename,
             target_parent,
             release: false,
-            cargo_profile: None,
+            spago_profile: None,
             public_url: Default::default(),
             filehash: true,
             final_dist,
             staging_dist,
-            cargo_features: Features::All,
-            cargo_example: None,
+            spago_features: Features::All,
+            spago_example: None,
             tools: Default::default(),
             hooks: Vec::new(),
             inject_autoloader: true,

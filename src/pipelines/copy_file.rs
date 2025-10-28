@@ -4,7 +4,7 @@ use crate::{
     common::{html_rewrite::Document, target_path},
     config::rt::RtcBuild,
     pipelines::{
-        data_target_path, AssetFile, AssetFileType, Attrs, TrunkAssetPipelineOutput, ATTR_HREF,
+        data_target_path, AssetFile, AssetFileType, Attrs, PrankAssetPipelineOutput, ATTR_HREF,
     },
 };
 use anyhow::{Context, Result};
@@ -35,7 +35,7 @@ impl CopyFile {
     ) -> Result<Self> {
         // Build the path to the target asset.
         let href_attr = attrs.get(ATTR_HREF).context(
-            r#"required attr `href` missing for <link data-trunk rel="copy-file" .../> element"#,
+            r#"required attr `href` missing for <link data-prank rel="copy-file" .../> element"#,
         )?;
         let mut path = PathBuf::new();
         path.extend(href_attr.split('/'));
@@ -53,13 +53,13 @@ impl CopyFile {
 
     /// Spawn the pipeline for this asset type.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         tokio::spawn(self.run())
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self) -> Result<TrunkAssetPipelineOutput> {
+    async fn run(self) -> Result<PrankAssetPipelineOutput> {
         let rel_path = crate::common::strip_prefix(&self.asset.path);
         tracing::debug!(path = ?rel_path, "copying file");
 
@@ -78,7 +78,7 @@ impl CopyFile {
             .await?;
         tracing::debug!(path = ?rel_path, "finished copying file");
 
-        Ok(TrunkAssetPipelineOutput::CopyFile(CopyFileOutput(self.id)))
+        Ok(PrankAssetPipelineOutput::CopyFile(CopyFileOutput(self.id)))
     }
 }
 
@@ -87,6 +87,6 @@ pub struct CopyFileOutput(usize);
 
 impl CopyFileOutput {
     pub async fn finalize(self, dom: &mut Document) -> Result<()> {
-        dom.remove(&super::trunk_id_selector(self.0))
+        dom.remove(&super::prank_id_selector(self.0))
     }
 }

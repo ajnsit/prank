@@ -13,6 +13,10 @@ pub struct Watch {
     /// Paths to ignore [default: []]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ignore: Vec<String>,
+
+    /// Paths to reload on change [default: []]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reload: Vec<String>,
 }
 
 impl ConfigModel for Watch {}

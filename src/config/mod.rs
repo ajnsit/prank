@@ -1,6 +1,6 @@
-//! Trunk config.
+//! Prank config.
 //!
-//! Trunk follows a layered configuration approach. There are reasonable defaults, the option
+//! Prank follows a layered configuration approach. There are reasonable defaults, the option
 //! to load from a configuration file, followed by overrides from the command line (or env-vars).
 //!
 //! There are four types of structs: Command Line, Serialization, Runtime Options, and Runtime.
@@ -19,9 +19,9 @@
 //!
 //! ## Serialization
 //!
-//! Trunk has a "project model", covering the aspects of what make up a Trunk project. This model
+//! Prank has a "project model", covering the aspects of what make up a Prank project. This model
 //! is based on structs in the [`crate::config::models`] module and based on [`serde`]. It is
-//! loaded in from a configuration file (TOML, YAML, …) or even the `Cargo.toml` file's metadata.
+//! loaded in from a configuration file (TOML, YAML, …).
 //!
 //! However, there is no hierarchical loading process. The first source found will be used.
 //!
@@ -30,7 +30,7 @@
 //!
 //! ## Runtime
 //!
-//! The runtime configuration structs in [`crate::config::rt`] contain all the information a Trunk
+//! The runtime configuration structs in [`crate::config::rt`] contain all the information a Prank
 //! command requires to execute, in the form the command requires it.
 //!
 //! ## Runtime Options
@@ -48,18 +48,17 @@
 //!
 //! Here is how it works in general:
 //!
-//! * Trunk parses the command line arguments (including env-vars) via `clap`
-//! * Trunk finds a configuration source (taking the `--config` argument under consideration).
-//! * The configuration file is loaded via `serde` and/or `cargo_metadata`.
+//! * Prank parses the command line arguments (including env-vars) via `clap`
+//! * Prank finds a configuration source (taking the `--config` argument under consideration).
+//! * The configuration file is loaded via `serde`.
 //! * The configuration model is validated, this might trigger warnings about deprecated fields.
 //! * The command line arguments get applied to the configuration, overriding the configuration.
 //! * The command creates the runtime options required for the command.
-//! * Trunk creates the runtime configuration from the configuration and the runtime options.
+//! * Prank creates the runtime configuration from the configuration and the runtime options.
 //!
-//! One aspect of this is that Trunk will always validate the full configuration, but will only
+//! One aspect of this is that Prank will always validate the full configuration, but will only
 //! create the required runtime configuration for the requested command.
 
-pub mod manifest;
 pub mod models;
 pub mod rt;
 pub mod types;
@@ -70,5 +69,4 @@ pub const DIST_DIR: &str = "dist";
 /// The name of the directory used to stage build artifacts during an active build.
 pub const STAGE_DIR: &str = ".stage";
 
-pub use manifest::CargoMetadata;
 pub use models::{load, Clean, Configuration, Hooks, Tools, Watch};

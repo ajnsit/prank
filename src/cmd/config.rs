@@ -3,7 +3,7 @@ use anyhow::Result;
 use clap::{Args, Subcommand};
 use std::{fs::File, io::stdout, path::PathBuf};
 
-/// Trunk config controls.
+/// Prank config controls.
 #[derive(Clone, Debug, Args)]
 #[command(name = "config")]
 pub struct Config {
@@ -13,9 +13,9 @@ pub struct Config {
 
 #[derive(Clone, Debug, Subcommand)]
 enum Command {
-    /// Show Trunk's current config pre-CLI.
+    /// Show Prank's current config pre-CLI.
     Show,
-    /// Generate the trunk configuration schema.
+    /// Generate the prank configuration schema.
     GenerateSchema {
         /// Filename to write the schema to, defaults to `<stdout>`.
         output: Option<PathBuf>,

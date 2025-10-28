@@ -9,7 +9,7 @@ use tempfile::tempdir;
 
 #[cfg(not(target_family = "windows"))]
 #[tokio::test]
-async fn err_bad_trunk_toml_build_target() {
+async fn err_bad_prank_toml_build_target() {
     let cwd = std::env::current_dir().expect("error getting cwd");
     let path = cwd.join("tests").join("data").join("bad-build-target.toml");
 
@@ -30,7 +30,7 @@ async fn err_bad_trunk_toml_build_target() {
 
 #[cfg(not(target_family = "windows"))]
 #[tokio::test]
-async fn err_bad_trunk_toml_watch_path() {
+async fn err_bad_prank_toml_watch_path() {
     let cwd = std::env::current_dir().expect("error getting cwd");
     let path = cwd.join("tests").join("data").join("bad-watch-path.toml");
     let (cfg, working_directory) = load(Some(path)).await.expect("expected config to parse");
@@ -56,7 +56,7 @@ async fn err_bad_trunk_toml_watch_path() {
     );
 }
 
-async fn assert_trunk_version(
+async fn assert_prank_version(
     path: impl AsRef<Path>,
     expected_version: VersionReq,
     pass: impl IntoIterator<Item = &'static str>,
@@ -73,12 +73,12 @@ async fn assert_trunk_version(
     .await
     .expect("configuration to build runtime");
 
-    assert_eq!(cfg.core.trunk_version, expected_version);
+    assert_eq!(cfg.core.prank_version, expected_version);
 
     for version in pass {
         assert!(
             crate::version::enforce_version_with(
-                &cfg.core.trunk_version,
+                &cfg.core.prank_version,
                 Version::parse(version).expect("version must parse")
             )
             .is_ok(),
@@ -89,7 +89,7 @@ async fn assert_trunk_version(
     for version in fail {
         assert!(
             crate::version::enforce_version_with(
-                &cfg.core.trunk_version,
+                &cfg.core.prank_version,
                 Version::parse(version).expect("version must parse")
             )
             .is_err(),
@@ -99,9 +99,9 @@ async fn assert_trunk_version(
 }
 
 #[tokio::test]
-async fn trunk_version_none() {
-    assert_trunk_version(
-        "trunk-version-none.toml",
+async fn prank_version_none() {
+    assert_prank_version(
+        "prank-version-none.toml",
         VersionReq::STAR,
         ["0.10.0", "0.19.0-alpha.1", "1.0.0"],
         [],
@@ -110,9 +110,9 @@ async fn trunk_version_none() {
 }
 
 #[tokio::test]
-async fn trunk_version_any() {
-    assert_trunk_version(
-        "trunk-version-any.toml",
+async fn prank_version_any() {
+    assert_prank_version(
+        "prank-version-any.toml",
         VersionReq::STAR,
         ["0.10.0", "0.19.0-alpha.1", "1.0.0"],
         [],
@@ -121,9 +121,9 @@ async fn trunk_version_any() {
 }
 
 #[tokio::test]
-async fn trunk_version_minor() {
-    assert_trunk_version(
-        "trunk-version-minor.toml",
+async fn prank_version_minor() {
+    assert_prank_version(
+        "prank-version-minor.toml",
         VersionReq {
             comparators: vec![Comparator {
                 op: Op::Caret,
@@ -140,9 +140,9 @@ async fn trunk_version_minor() {
 }
 
 #[tokio::test]
-async fn trunk_version_range() {
-    assert_trunk_version(
-        "trunk-version-range.toml",
+async fn prank_version_range() {
+    assert_prank_version(
+        "prank-version-range.toml",
         VersionReq {
             comparators: vec![
                 Comparator {
@@ -168,9 +168,9 @@ async fn trunk_version_range() {
 }
 
 #[tokio::test]
-async fn trunk_version_prerelease() {
-    assert_trunk_version(
-        "trunk-version-prerelease.toml",
+async fn prank_version_prerelease() {
+    assert_prank_version(
+        "prank-version-prerelease.toml",
         VersionReq {
             comparators: vec![Comparator {
                 op: Op::Caret,
@@ -197,8 +197,8 @@ async fn example_config() {
     let dir = tempdir().expect("should be able to create temp directory");
 
     let cwd = std::env::current_dir().expect("error getting cwd");
-    let path = cwd.join("Trunk.toml");
-    let target = dir.path().join("Trunk.toml");
+    let path = cwd.join("Prank.toml");
+    let target = dir.path().join("Prank.toml");
 
     // copy to temp dir
     fs::copy(path, &target).expect("should copy file");

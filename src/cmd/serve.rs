@@ -20,50 +20,50 @@ use tokio::{select, sync::broadcast};
 #[command(next_help_heading = "Serve")]
 pub struct Serve {
     /// The addresses to serve on [default: <local loopback>]
-    #[arg(short, long, env = "TRUNK_SERVE_ADDRESS")]
+    #[arg(short, long, env = "PRANK_SERVE_ADDRESS")]
     pub address: Option<Vec<IpAddr>>,
-    #[arg(short = 'A', long, env = "TRUNK_SERVE_PREFER_ADDRESS_FAMILY")]
+    #[arg(short = 'A', long, env = "PRANK_SERVE_PREFER_ADDRESS_FAMILY")]
     pub prefer_address_family: Option<AddressFamily>,
     /// The port to serve on [default: 8080]
-    #[arg(short, long, env = "TRUNK_SERVE_PORT")]
+    #[arg(short, long, env = "PRANK_SERVE_PORT")]
     pub port: Option<u16>,
     /// The aliases to serve on
-    #[arg(long, env = "TRUNK_SERVE_ALIAS")]
+    #[arg(long, env = "PRANK_SERVE_ALIAS")]
     pub alias: Option<Vec<String>>,
     /// Disable the lookup of addresses serving on during startup
-    #[arg(long, env = "TRUNK_SERVE_DISABLE_ADDRESS_LOOKUP")]
+    #[arg(long, env = "PRANK_SERVE_DISABLE_ADDRESS_LOOKUP")]
     #[arg(default_missing_value="true", num_args=0..=1)]
     pub disable_address_lookup: Option<bool>,
     /// Open a browser tab once the initial build is complete [default: false]
-    #[arg(long, env = "TRUNK_SERVE_OPEN")]
+    #[arg(long, env = "PRANK_SERVE_OPEN")]
     #[arg(default_missing_value="true", num_args=0..=1)]
     pub open: Option<bool>,
     /// Disable auto-reload of the web app
-    #[arg(long, env = "TRUNK_SERVE_NO_AUTORELOAD")]
+    #[arg(long, env = "PRANK_SERVE_NO_AUTORELOAD")]
     #[arg(default_missing_value="true", num_args=0..=1)]
     pub no_autoreload: Option<bool>,
     /// Disable error reporting in the browser [default: false]
-    #[arg(long, env = "TRUNK_SERVE_NO_ERROR_REPORTING")]
+    #[arg(long, env = "PRANK_SERVE_NO_ERROR_REPORTING")]
     #[arg(default_missing_value="true", num_args=0..=1)]
     pub no_error_reporting: Option<bool>,
     /// Disable fallback to index.html for missing files [default: false]
-    #[arg(long, env = "TRUNK_SERVE_NO_SPA")]
+    #[arg(long, env = "PRANK_SERVE_NO_SPA")]
     #[arg(default_missing_value="true", num_args=0..=1)]
     pub no_spa: Option<bool>,
     /// Protocol used for the auto-reload WebSockets connection [enum: ws, wss]
-    #[arg(long, env = "TRUNK_SERVE_WS_PROTOCOL")]
+    #[arg(long, env = "PRANK_SERVE_WS_PROTOCOL")]
     pub ws_protocol: Option<WsProtocol>,
-    /// The path to the trunk web-socket [default: <serve-base>]
-    #[arg(long, env = "TRUNK_SERVE_WS_BASE")]
+    /// The path to the prank web-socket [default: <serve-base>]
+    #[arg(long, env = "PRANK_SERVE_WS_BASE")]
     pub ws_base: Option<String>,
     /// The TLS key file to enable TLS encryption [default: None]
-    #[arg(long, env = "TRUNK_SERVE_TLS_KEY_PATH")]
+    #[arg(long, env = "PRANK_SERVE_TLS_KEY_PATH")]
     pub tls_key_path: Option<PathBuf>,
     /// The TLS cert file to enable TLS encryption [default: None]
-    #[arg(long, env = "TRUNK_SERVE_TLS_CERT_PATH")]
+    #[arg(long, env = "PRANK_SERVE_TLS_CERT_PATH")]
     pub tls_cert_path: Option<PathBuf>,
     /// A base path to serve the application from [default: <public-url>]
-    #[arg(long, env = "TRUNK_SERVE_SERVE_BASE")]
+    #[arg(long, env = "PRANK_SERVE_SERVE_BASE")]
     pub serve_base: Option<String>,
     /// Disable Content-Security-Policy [default: false]
     #[arg(long)]
@@ -82,29 +82,29 @@ pub struct Serve {
 #[command(next_help_heading = "Backend Proxy")]
 pub struct ProxyArgs {
     /// A URL to which requests will be proxied
-    #[arg(long, env = "TRUNK_SERVE_PROXY_BACKEND")]
+    #[arg(long, env = "PRANK_SERVE_PROXY_BACKEND")]
     pub proxy_backend: Option<Uri>,
     /// The URI on which to accept requests which are to be rewritten and proxied to backend
     /// [default: None]
-    #[arg(long, env = "TRUNK_SERVE_PROXY_REWRITE", requires = "proxy_backend")]
+    #[arg(long, env = "PRANK_SERVE_PROXY_REWRITE", requires = "proxy_backend")]
     pub proxy_rewrite: Option<String>,
     /// Configure the proxy for handling WebSockets
-    #[arg(long, env = "TRUNK_SERVE_PROXY_WS", requires = "proxy_backend")]
+    #[arg(long, env = "PRANK_SERVE_PROXY_WS", requires = "proxy_backend")]
     pub proxy_ws: bool,
     /// Configure the proxy to accept insecure requests
-    #[arg(long, env = "TRUNK_SERVE_PROXY_INSECURE", requires = "proxy_backend")]
+    #[arg(long, env = "PRANK_SERVE_PROXY_INSECURE", requires = "proxy_backend")]
     pub proxy_insecure: bool,
     /// Configure the proxy to bypass system proxy when contacting the backend
     #[arg(
         long,
-        env = "TRUNK_SERVE_PROXY_NO_SYSTEM_PROXY",
+        env = "PRANK_SERVE_PROXY_NO_SYSTEM_PROXY",
         requires = "proxy_backend"
     )]
     pub proxy_no_system_proxy: bool,
     /// Configure the proxy to not automatically follow redirects if a backend responds with a redirect
     #[arg(
         long,
-        env = "TRUNK_SERVE_PROXY_NO_REDIRECT",
+        env = "PRANK_SERVE_PROXY_NO_REDIRECT",
         requires = "proxy_backend"
     )]
     pub proxy_no_redirect: bool,

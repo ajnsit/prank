@@ -18,19 +18,21 @@ use tokio::sync::{Mutex, OnceCell};
 /// The application to locate and eventually download when calling [`get`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, strum::EnumIter)]
 pub enum Application {
+    /// spago for PureScript package management and building
+    Spago,
+    /// purs-tidy for formatting PureScript code
+    PursTidy,
+    /// purs-backend-es for compiling PureScript to ES
+    PureScriptBackendEs,
     /// sass for generating css
     Sass,
     /// tailwindcss for generating css
     TailwindCss,
     /// tailwindcss-extra for generating css with DaisyUI bundled.
     TailwindCssExtra,
-    /// wasm-bindgen for generating the JS bindings.
-    WasmBindgen,
-    /// wasm-opt to improve performance and size of the output file further.
-    WasmOpt,
 }
 
-/// These options configure how Trunk sets up it's HTTP Client.
+/// These options configure how Prank sets up it's HTTP Client.
 #[derive(Debug, Clone, Default)]
 pub struct HttpClientOptions {
     /// Use this specific root certificate to validate the certificate chain. Optional.
@@ -38,7 +40,7 @@ pub struct HttpClientOptions {
     /// Useful when behind a corporate proxy that uses a self-signed root certificate.
     #[cfg(any(feature = "native-tls", feature = "rustls"))]
     pub root_certificate: Option<PathBuf>,
-    /// Allows Trunk to accept certificates that can't be verified when fetching dependencies. Defaults to false.
+    /// Allows Prank to accept certificates that can't be verified when fetching dependencies. Defaults to false.
     ///
     /// **WARNING**: This is inherently unsafe and can open you up to Man-in-the-middle attacks. But sometimes it is required when working behind corporate proxies.
     #[cfg(any(feature = "native-tls", feature = "rustls"))]
@@ -52,9 +54,24 @@ impl Application {
             Self::Sass => "sass",
             Self::TailwindCss => "tailwindcss",
             Self::TailwindCssExtra => "tailwindcss-extra",
-            Self::WasmBindgen => "wasm-bindgen",
-            Self::WasmOpt => "wasm-opt",
+            Self::PureScriptBackendEs => "purs-backend-es",
+            Self::Spago => "spago",
+            Self::PursTidy => "purs-tidy",
         }
+    }
+
+    /// The name of the package on npm, if applicable.
+    pub(crate) fn npm_package_name(&self) -> Option<&str> {
+        match self {
+            Self::Spago => Some("spago@next"),
+            Self::PursTidy => Some("purs-tidy"),
+            Self::PureScriptBackendEs => Some("purs-backend-es"),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn is_npm_based(&self) -> bool {
+        self.npm_package_name().is_some()
     }
 
     /// Path of the executable within the downloaded archive.
@@ -64,16 +81,18 @@ impl Application {
                 Self::Sass => "sass.bat",
                 Self::TailwindCss => "tailwindcss.exe",
                 Self::TailwindCssExtra => "tailwindcss-extra.exe",
-                Self::WasmBindgen => "wasm-bindgen.exe",
-                Self::WasmOpt => "bin/wasm-opt.exe",
+                Self::PureScriptBackendEs => "purs-backend-es.exe",
+                Self::Spago => "spago.exe",
+                Self::PursTidy => "purs-tidy.exe",
             }
         } else {
             match self {
                 Self::Sass => "sass",
                 Self::TailwindCss => "tailwindcss",
                 Self::TailwindCssExtra => "tailwindcss-extra",
-                Self::WasmBindgen => "wasm-bindgen",
-                Self::WasmOpt => "bin/wasm-opt",
+                Self::PureScriptBackendEs => "purs-backend-es",
+                Self::Spago => "spago",
+                Self::PursTidy => "purs-tidy",
             }
         }
     }
@@ -90,14 +109,9 @@ impl Application {
             }
             Self::TailwindCss => &[],
             Self::TailwindCssExtra => &[],
-            Self::WasmBindgen => &[],
-            Self::WasmOpt => {
-                if cfg!(target_os = "macos") {
-                    &["lib/libbinaryen.dylib"]
-                } else {
-                    &[]
-                }
-            }
+            Self::PureScriptBackendEs => &[],
+            Self::Spago => &[], // Archive only contains the binary
+            Self::PursTidy => &[],
         }
     }
 
@@ -107,8 +121,9 @@ impl Application {
             Self::Sass => "1.69.5",
             Self::TailwindCss => "3.3.5",
             Self::TailwindCssExtra => "1.7.25",
-            Self::WasmBindgen => "0.2.89",
-            Self::WasmOpt => "version_123",
+            Self::PureScriptBackendEs => "1.4.3",
+            Self::Spago => "0.93.44",
+            Self::PursTidy => "0.11.0",
         }
     }
 
@@ -154,18 +169,8 @@ impl Application {
                 _ => bail!("Unable to download tailwindcss for {target_os} {target_arch}")
             },
 
-            Self::WasmBindgen => match (target_os, target_arch) {
-                ("windows", "x86_64") => format!("https://github.com/rustwasm/wasm-bindgen/releases/download/{version}/wasm-bindgen-{version}-x86_64-pc-windows-msvc.tar.gz"),
-                ("macos", "x86_64") => format!("https://github.com/rustwasm/wasm-bindgen/releases/download/{version}/wasm-bindgen-{version}-x86_64-apple-darwin.tar.gz"),
-                ("macos", "aarch64") => format!("https://github.com/rustwasm/wasm-bindgen/releases/download/{version}/wasm-bindgen-{version}-aarch64-apple-darwin.tar.gz"),
-                ("linux", "x86_64") => format!("https://github.com/rustwasm/wasm-bindgen/releases/download/{version}/wasm-bindgen-{version}-x86_64-unknown-linux-musl.tar.gz"),
-                ("linux", "aarch64") => format!("https://github.com/rustwasm/wasm-bindgen/releases/download/{version}/wasm-bindgen-{version}-aarch64-unknown-linux-gnu.tar.gz"),
-                _ => bail!("Unable to download wasm-bindgen for {target_os} {target_arch}")
-            },
-
-            Self::WasmOpt => match (target_os, target_arch) {
-                ("macos", "aarch64") => format!("https://github.com/WebAssembly/binaryen/releases/download/{version}/binaryen-{version}-arm64-macos.tar.gz"),
-                _ => format!("https://github.com/WebAssembly/binaryen/releases/download/{version}/binaryen-{version}-{target_arch}-{target_os}.tar.gz")
+            Self::Spago | Self::PursTidy | Self::PureScriptBackendEs => {
+                 bail!("{} does not have a binary download available. Get it from NPM.", self.name());
             }
         })
     }
@@ -176,8 +181,9 @@ impl Application {
             Application::Sass => "--version",
             Application::TailwindCss => "--help",
             Application::TailwindCssExtra => "--help",
-            Application::WasmBindgen => "--version",
-            Application::WasmOpt => "--version",
+            Application::PureScriptBackendEs => "--version",
+            Application::Spago => "--version",
+            Application::PursTidy => "--version",
         }
     }
 
@@ -188,11 +194,18 @@ impl Application {
 
         let text = text.trim();
         let formatted_version = match self {
-            Application::Sass => text
+            Application::Sass | Application::Spago | Application::PursTidy => text
                 .split_whitespace()
                 .next()
                 .with_context(|| format!("missing or malformed version output: {text}"))?
                 .to_owned(),
+            Application::PureScriptBackendEs => {
+                println!("{:?}", text);
+                text.split_whitespace()
+                    .next()
+                    .with_context(|| format!("missing or malformed version output: {text}"))?
+                    .to_owned()
+            }
             Application::TailwindCss | Application::TailwindCssExtra => {
                 let caps = regex_tailwind
                     .captures(text)
@@ -201,17 +214,6 @@ impl Application {
                     .map(|m| m.as_str().to_owned())
                     .with_context(|| format!("missing capture group in version output: {text}"))?
             }
-            Application::WasmBindgen => text
-                .split(' ')
-                .nth(1)
-                .with_context(|| format!("missing or malformed version output: {text}"))?
-                .to_owned(),
-            Application::WasmOpt => format!(
-                "version_{}",
-                text.split(' ')
-                    .nth(2)
-                    .with_context(|| format!("missing or malformed version output: {text}"))?
-            ),
         };
         Ok(formatted_version)
     }
@@ -222,11 +224,11 @@ impl Application {
 static GLOBAL_APP_CACHE: Lazy<Mutex<AppCache>> = Lazy::new(|| Mutex::new(AppCache::new()));
 
 /// An app cache that does the actual download and installation of tools while keeping track of
-/// what has already been installed in the current trunk execution.
+/// what has already been installed in the current prank execution.
 ///
 /// This cache doesn't keep track of any system-installed tools or the one's that have been
-/// installed in previous runs of trunk. It only helps in avoiding a download of the same tool
-/// concurrently during a single run of trunk.
+/// installed in previous runs of prank. It only helps in avoiding a download of the same tool
+/// concurrently during a single run of prank.
 struct AppCache(HashMap<(Application, String), OnceCell<()>>);
 
 impl AppCache {
@@ -248,19 +250,24 @@ impl AppCache {
 
         cached
             .get_or_try_init(|| async move {
-                let path = download(app, version, client_options)
-                    .await
-                    .context("failed downloading release archive")?;
+                if app.is_npm_based() {
+                    // Install via npm
+                    install_npm(app, version).await
+                } else {
+                    let path = download(app, version, client_options)
+                        .await
+                        .context("failed downloading release archive")?;
 
-                let file = File::open(&path)
-                    .await
-                    .context("failed opening downloaded file")?;
-                install(app, file, app_dir).await?;
-                tokio::fs::remove_file(path)
-                    .await
-                    .context("failed deleting temporary archive")?;
+                    let file = File::open(&path)
+                        .await
+                        .context("failed opening downloaded file")?;
+                    install(app, file, app_dir).await?;
+                    tokio::fs::remove_file(path)
+                        .await
+                        .context("failed deleting temporary archive")?;
 
-                Ok(())
+                    Ok(())
+                }
             })
             .await
             .map(|_| ())
@@ -360,6 +367,56 @@ pub async fn get_info(
     })
 }
 
+/// Install an application globally using npm.
+#[tracing::instrument(level = "debug")]
+async fn install_npm(app: Application, version: &str) -> Result<()> {
+    tracing::info!("installing {} ({}) via npm", app.name(), version);
+
+    // 1. Find npm
+    let npm_path = which::which("npm").context(
+        "npm command not found. Cannot install npm-based tool. Please install Node.js and npm.",
+    )?;
+
+    // 2. Get package name
+    let package_name = app.npm_package_name().ok_or_else(|| {
+        anyhow!(
+            "Internal error: install_npm called for non-npm tool {}",
+            app.name()
+        )
+    })?;
+
+    // 3. Construct package string (e.g., "purescript-spago@0.93.44")
+    let package_version_string = format!("{}@{}", package_name, version);
+
+    // 4. Run npm install -g
+    let args = &["install", "-g", &package_version_string];
+    tracing::debug!("Running command: {} {}", npm_path.display(), args.join(" "));
+
+    let output = Command::new(&npm_path)
+        .args(args)
+        .output()
+        .await
+        .context(format!(
+            "Failed to execute npm install for {}",
+            package_name
+        ))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        bail!(
+            "npm install failed for {}:\nStatus: {}\nStdout:\n{}\nStderr:\n{}",
+            package_version_string,
+            output.status,
+            stdout,
+            stderr
+        );
+    }
+
+    tracing::info!("Successfully installed {} via npm", package_version_string);
+    Ok(())
+}
+
 /// Try to find a global system installed version of the application.
 #[tracing::instrument(level = "debug")]
 pub async fn find_system(app: Application) -> Option<(PathBuf, String)> {
@@ -374,7 +431,12 @@ pub async fn find_system(app: Application) -> Option<(PathBuf, String)> {
             app.version_test()
         );
 
-        let text = String::from_utf8_lossy(&output.stdout);
+        // purs-backend-es sends its version number to stderr for some reason
+        let text = match app {
+            Application::PureScriptBackendEs => String::from_utf8_lossy(&output.stderr),
+            _ => String::from_utf8_lossy(&output.stdout),
+        };
+
         let system_version = app.format_version_output(&text)?;
 
         tracing::debug!("system version found for {}: {system_version}", app.name());
@@ -442,6 +504,11 @@ async fn download(
 /// location.
 #[tracing::instrument(level = "trace")]
 async fn install(app: Application, archive_file: File, target_directory: PathBuf) -> Result<()> {
+    // let main_executable = target_directory.join(app.path());
+    // ensure!(
+    //     false,
+    //     "Installing dependency application binaries is not supported right now. Error while trying to install {main_executable:?}."
+    // );
     tracing::info!("installing {}", app.name());
 
     let archive_file = archive_file.into_std().await;
@@ -493,9 +560,9 @@ async fn install(app: Application, archive_file: File, target_directory: PathBuf
     Ok(())
 }
 
-/// Locate the cache dir for trunk and make sure it exists.
+/// Locate the cache dir for prank and make sure it exists.
 pub async fn cache_dir() -> Result<PathBuf> {
-    let path = ProjectDirs::from("dev", "trunkrs", "trunk")
+    let path = ProjectDirs::from("dev", "prankrs", "prank")
         .context("failed finding project directory")?
         .cache_dir()
         .to_owned();
@@ -757,12 +824,7 @@ mod tests {
     async fn download_and_install_binaries() -> Result<()> {
         let dir = tempfile::tempdir().context("error creating temporary dir")?;
 
-        for &app in &[
-            Application::Sass,
-            Application::WasmBindgen,
-            Application::WasmOpt,
-            Application::TailwindCss,
-        ] {
+        for &app in &[Application::Sass, Application::TailwindCss] {
             let path = download(app, app.default_version(), &HttpClientOptions::default())
                 .await
                 .context("error downloading app")?;
@@ -793,34 +855,6 @@ mod tests {
             }
         };
     }
-
-    table_test_format_version!(
-        wasm_opt_from_source,
-        Application::WasmOpt,
-        "wasm-opt version 101 (version_101)",
-        "version_101"
-    );
-
-    table_test_format_version!(
-        wasm_opt_pre_compiled,
-        Application::WasmOpt,
-        "wasm-opt version 101",
-        "version_101"
-    );
-
-    table_test_format_version!(
-        wasm_bindgen_from_source,
-        Application::WasmBindgen,
-        "wasm-bindgen 0.2.75",
-        "0.2.75"
-    );
-
-    table_test_format_version!(
-        wasm_bindgen_pre_compiled,
-        Application::WasmBindgen,
-        "wasm-bindgen 0.2.74 (27c7a4d06)",
-        "0.2.74"
-    );
 
     table_test_format_version!(sass_pre_compiled, Application::Sass, "1.37.5", "1.37.5");
     table_test_format_version!(

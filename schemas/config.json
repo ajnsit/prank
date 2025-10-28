@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Configuration",
-  "description": "The persisted Trunk configuration model",
+  "description": "The persisted Prank configuration model",
   "type": "object",
   "properties": {
     "build": {
@@ -9,7 +9,6 @@
         "accept_invalid_certs": false,
         "all_features": false,
         "allow_self_closing_script": false,
-        "cargo_profile": null,
         "create_nonce": false,
         "dist": "dist",
         "filehash": true,
@@ -20,11 +19,12 @@
         "minify": "never",
         "no_default_features": false,
         "no_sri": false,
-        "nonce_placeholder": "{{__TRUNK NONCE__}}",
+        "nonce_placeholder": "{{__PRANK NONCE__}}",
         "offline": false,
         "public_url": "/",
         "public_url_no_trailing_slash_fix": false,
         "release": false,
+        "spago_profile": null,
         "target": "index.html"
       },
       "allOf": [
@@ -35,7 +35,7 @@
     },
     "clean": {
       "default": {
-        "cargo": false
+        "spago": false
       },
       "allOf": [
         {
@@ -58,6 +58,14 @@
         }
       ]
     },
+    "prank_version": {
+      "default": "*",
+      "allOf": [
+        {
+          "$ref": "#/definitions/VersionReq"
+        }
+      ]
+    },
     "proxies": {
       "$ref": "#/definitions/Proxies"
     },
@@ -66,14 +74,6 @@
     },
     "tools": {
       "$ref": "#/definitions/Tools"
-    },
-    "trunk_version": {
-      "default": "*",
-      "allOf": [
-        {
-          "$ref": "#/definitions/VersionReq"
-        }
-      ]
     },
     "watch": {
       "$ref": "#/definitions/Watch"
@@ -109,14 +109,6 @@
           "description": "Ignore error's related to self-closing script elements, and instead issue a warning.\n\nSince this issue can cause the HTML output to be truncated, only enable this in case you are sure it is caused due to a false positive.",
           "default": false,
           "type": "boolean"
-        },
-        "cargo_profile": {
-          "description": "Cargo profile to use.\n\nOverrides the default chosen by cargo. Ignored if the 'index.html' has one configured.",
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
         },
         "create_nonce": {
           "description": "Create 'nonce' attributes with a placeholder.",
@@ -155,7 +147,7 @@
           "type": "boolean"
         },
         "frozen": {
-          "description": "Require Cargo.lock and cache are up to date",
+          "description": "Require Spago.lock and cache are up to date",
           "default": false,
           "type": "boolean"
         },
@@ -170,7 +162,7 @@
           "type": "boolean"
         },
         "locked": {
-          "description": "Require Cargo.lock is up to date",
+          "description": "Require Spago.lock is up to date",
           "default": false,
           "type": "boolean"
         },
@@ -195,7 +187,7 @@
         },
         "nonce_placeholder": {
           "description": "The placeholder which is used in the 'nonce' attribute.",
-          "default": "{{__TRUNK NONCE__}}",
+          "default": "{{__PRANK NONCE__}}",
           "type": "string"
         },
         "offline": {
@@ -204,7 +196,7 @@
           "type": "boolean"
         },
         "pattern_params": {
-          "description": "Optional replacement parameters corresponding to the patterns provided in `pattern_script` and `pattern_preload`.\n\nWhen a pattern is being replaced with its corresponding value from this map, if the value is prefixed with the symbol `@`, then the value is expected to be a file path, and the pattern will be replaced with the contents of the target file. This allows insertion of some big JSON state or even HTML files as a part of the `index.html` build.\n\nTrunk will automatically insert the `base`, `wasm` and `js` key/values into this map. In order for the app to be loaded properly, the patterns `{base}`, `{wasm}` and `{js}` should be used in `pattern_script` and `pattern_preload`.\n\nThese values can only be provided via config file.",
+          "description": "Optional replacement parameters corresponding to the patterns provided in `pattern_script` and `pattern_preload`.\n\nWhen a pattern is being replaced with its corresponding value from this map, if the value is prefixed with the symbol `@`, then the value is expected to be a file path, and the pattern will be replaced with the contents of the target file. This allows insertion of some big JSON state or even HTML files as a part of the `index.html` build.\n\nPrank will automatically insert the `base`, `wasm` and `js` key/values into this map. In order for the app to be loaded properly, the patterns `{base}`, `{wasm}` and `{js}` should be used in `pattern_script` and `pattern_preload`.\n\nThese values can only be provided via config file.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -244,7 +236,15 @@
           "type": "boolean"
         },
         "root_certificate": {
-          "description": "When desired, set a custom root certificate chain (same format as Cargo's config.toml http.cainfo)",
+          "description": "When desired, set a custom root certificate chain (same format as Spago's config.toml http.cainfo)",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "spago_profile": {
+          "description": "Spago profile to use.\n\nOverrides the default chosen by spago. Ignored if the 'index.html' has one configured.",
+          "default": null,
           "type": [
             "string",
             "null"
@@ -261,11 +261,6 @@
       "description": "Config options for the serve system.",
       "type": "object",
       "properties": {
-        "cargo": {
-          "description": "Optionally perform a cargo clean",
-          "default": false,
-          "type": "boolean"
-        },
         "dist": {
           "description": "The output dir for all final assets",
           "deprecated": true,
@@ -273,6 +268,11 @@
             "string",
             "null"
           ]
+        },
+        "spago": {
+          "description": "Optionally remove the .spago dir",
+          "default": false,
+          "type": "boolean"
         }
       }
     },
@@ -650,7 +650,7 @@
           ]
         },
         "ws_base": {
-          "description": "The path to the trunk web-socket",
+          "description": "The path to the prank web-socket",
           "default": null,
           "type": [
             "string",
@@ -674,6 +674,22 @@
       "description": "Config options for automatic application downloads.",
       "type": "object",
       "properties": {
+        "purescript_backend_es": {
+          "description": "Version of `purescript-backend-es` to use.",
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "purs_tidy": {
+          "description": "Version of `purs-tidy` to use.",
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "sass": {
           "description": "Version of `dart-sass` to use.",
           "default": null,
@@ -682,24 +698,16 @@
             "null"
           ]
         },
+        "spago": {
+          "description": "Version of `spago` to use.",
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "tailwindcss": {
           "description": "Version of `tailwindcss-cli` to use.",
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "wasm_bindgen": {
-          "description": "Version of `wasm-bindgen` to use.",
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "wasm_opt": {
-          "description": "Version of `wasm-opt` to use.",
           "default": null,
           "type": [
             "string",
@@ -721,6 +729,13 @@
       "properties": {
         "ignore": {
           "description": "Paths to ignore [default: []]",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reload": {
+          "description": "Paths to reload on change [default: []]",
           "type": "array",
           "items": {
             "type": "string"

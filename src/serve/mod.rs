@@ -381,7 +381,7 @@ impl State {
     }
 }
 
-/// Build the Trunk router, this includes that static file server, the WebSocket server,
+/// Build the Prank router, this includes that static file server, the WebSocket server,
 /// (for autoreload & HMR in the future), as well as any user-defined proxies.
 fn router(state: Arc<State>, cfg: Arc<RtcServe>) -> Result<Router> {
     // Build static file server, middleware, error handler & WS route for reloads.
@@ -394,6 +394,20 @@ fn router(state: Arc<State>, cfg: Arc<RtcServe>) -> Result<Router> {
                 .fallback(ServeFile::new(state.dist_dir.join(INDEX_HTML))),
         )
     };
+
+    // If we are in dev mode, serve the PureScript output directory as well.
+    let mut router = Router::new();
+    if !cfg.watch.build.release {
+        let purescript_output_dir = state.cfg.watch.build.working_directory.join("output");
+        tracing::info!("{} serving PureScript assets at /output", SERVER);
+        router = router.nest_service(
+            "/output",
+            get_service(ServeDir::new(purescript_output_dir)).handle_error(|error| async move {
+                tracing::error!(?error, "failed serving PureScript static file");
+                StatusCode::INTERNAL_SERVER_ERROR
+            }),
+        );
+    }
     for (key, value) in &state.headers {
         let name = HeaderName::from_bytes(key.as_bytes())
             .with_context(|| format!("invalid header {key:?}"))?;
@@ -403,10 +417,10 @@ fn router(state: Arc<State>, cfg: Arc<RtcServe>) -> Result<Router> {
         serve_dir = serve_dir.layer(SetResponseHeaderLayer::overriding(name, value))
     }
 
-    let mut router = Router::new()
+    router = router
         .route(
             // we always serve the ws under the serve-base, ws-base is only to override the lookup
-            "/.well-known/trunk/ws",
+            "/.well-known/prank/ws",
             get(
                 |ws: WebSocketUpgrade, state: axum::extract::State<Arc<State>>| async move {
                     ws.on_upgrade(|socket| async move { ws::handle_ws(socket, state.0).await })
@@ -529,10 +543,10 @@ async fn html_address_middleware(
 
                     let mut data_str = data_str
                         // minification will turn quotes into backticks, so we have to replace both
-                        .replace("'{{__TRUNK_ADDRESS__}}'", &host)
-                        .replace("`{{__TRUNK_ADDRESS__}}`", &host)
+                        .replace("'{{__PRANK_ADDRESS__}}'", &host)
+                        .replace("`{{__PRANK_ADDRESS__}}`", &host)
                         // here we only replace the string value
-                        .replace("{{__TRUNK_WS_BASE__}}", &state.ws_base);
+                        .replace("{{__PRANK_WS_BASE__}}", &state.ws_base);
 
                     let mut csp = None;
 

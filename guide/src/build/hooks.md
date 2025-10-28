@@ -1,11 +1,11 @@
 # Hooks
 
-If you find that you need Trunk to perform an additional build action that isn't supported directly, then Trunk's
+If you find that you need Prank to perform an additional build action that isn't supported directly, then Prank's
 flexible hooks system can be used to launch external processes at various stages in the pipeline.
 
 ## Build steps
 
-This is a brief overview of Trunk's build process for the purpose of describing when hooks are executed. Please note
+This is a brief overview of Prank's build process for the purpose of describing when hooks are executed. Please note
 that the exact ordering may change in the future to add new features.
 
 - Step 1 — Read and parse the HTML file.
@@ -23,27 +23,27 @@ The hook stages correspond to this as follows:
 
 ## Hook execution
 
-Hooks can be declared exclusively in `Trunk.toml`, and consist of a `stage`, `command` and `command_arguments`:
+Hooks can be declared exclusively in `Prank.toml`, and consist of a `stage`, `command` and `command_arguments`:
 
-- `stage`: (required) one of `pre_build`, `build` or `post_build`. It specifies when in Trunk's build pipeline the hook
+- `stage`: (required) one of `pre_build`, `build` or `post_build`. It specifies when in Prank's build pipeline the hook
   is executed.
 - `command`: (required) the name or path to the desired executable.
 - `command_arguments`: (optional, defaults to none) any arguments to be passed, in the given order, to the executable.
 
-At the relevant point for each stage, all hooks for that stage are spawned simultaneously. After this, Trunk immediately
+At the relevant point for each stage, all hooks for that stage are spawned simultaneously. After this, Prank immediately
 waits for all the hooks to exit before proceeding, except in the case of the `build` stage, described further below.
 
-All hooks are executed using the same `stdin` and `stdout` as trunk. The executable is expected to return an error code
+All hooks are executed using the same `stdin` and `stdout` as prank. The executable is expected to return an error code
 of `0` to indicate success. Any other code will be treated as an error and terminate the build process. Additionally,
 the following environment variables are provided to the process:
 
-- `TRUNK_PROFILE`: the build profile in use. Currently, either `debug` or `release`.
-- `TRUNK_HTML_FILE`: the full path to the HTML file (typically `index.html` in `TRUNK_SOURCE_DIR`) used by trunk.
-- `TRUNK_SOURCE_DIR`: the full path to the source directory in use by Trunk. This is always the directory in
-  which `TRUNK_HTML_FILE` resides.
-- `TRUNK_STAGING_DIR`: the full path of the Trunk staging directory.
-- `TRUNK_DIST_DIR`: the full path of the Trunk dist directory.
-- `TRUNK_PUBLIC_URL`: the configured public URL for Trunk.
+- `PRANK_PROFILE`: the build profile in use. Currently, either `debug` or `release`.
+- `PRANK_HTML_FILE`: the full path to the HTML file (typically `index.html` in `PRANK_SOURCE_DIR`) used by prank.
+- `PRANK_SOURCE_DIR`: the full path to the source directory in use by Prank. This is always the directory in
+  which `PRANK_HTML_FILE` resides.
+- `PRANK_STAGING_DIR`: the full path of the Prank staging directory.
+- `PRANK_DIST_DIR`: the full path of the Prank dist directory.
+- `PRANK_PUBLIC_URL`: the configured public URL for Prank.
 
 ## OS-specific overrides
 

@@ -1,7 +1,7 @@
 //! Tailwind CSS asset pipeline.
 
 use super::{
-    data_target_path, AssetFile, AttrWriter, Attrs, TrunkAssetPipelineOutput, ATTR_CONFIG,
+    data_target_path, AssetFile, AttrWriter, Attrs, PrankAssetPipelineOutput, ATTR_CONFIG,
     ATTR_HREF, ATTR_INLINE, ATTR_NO_MINIFY,
 };
 use crate::{
@@ -47,7 +47,7 @@ impl TailwindCss {
     ) -> Result<Self> {
         // Build the path to the target asset.
         let href_attr = attrs.get(ATTR_HREF).context(
-            r#"required attr `href` missing for <link data-trunk rel="tailwind-css" .../> element"#,
+            r#"required attr `href` missing for <link data-prank rel="tailwind-css" .../> element"#,
         )?;
         let tailwind_config = attrs.get(ATTR_CONFIG).map(|attr| &attr.value).cloned();
         let mut path = PathBuf::new();
@@ -74,13 +74,13 @@ impl TailwindCss {
 
     /// Spawn the pipeline for this asset type.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         tokio::spawn(self.run())
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self) -> Result<TrunkAssetPipelineOutput> {
+    async fn run(self) -> Result<PrankAssetPipelineOutput> {
         let version = self.cfg.tools.tailwindcss.as_deref();
         let tailwind = tools::get(
             Application::TailwindCss,
@@ -157,7 +157,7 @@ impl TailwindCss {
         };
 
         tracing::debug!(path = ?rel_path, "finished compiling tailwind css");
-        Ok(TrunkAssetPipelineOutput::TailwindCss(TailwindCssOutput {
+        Ok(PrankAssetPipelineOutput::TailwindCss(TailwindCssOutput {
             cfg: self.cfg.clone(),
             id: self.id,
             css_ref,
@@ -207,6 +207,6 @@ impl TailwindCssOutput {
                 )
             }
         };
-        dom.replace_with_html(&super::trunk_id_selector(self.id), &html)
+        dom.replace_with_html(&super::prank_id_selector(self.id), &html)
     }
 }

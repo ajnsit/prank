@@ -1,6 +1,6 @@
 # Startup event
 
-The initializer code snippet of Trunk will emit an event when the WebAssembly application has been loaded and started.
+The initializer code snippet of Prank will emit an event when the WebAssembly application has been loaded and started.
 
 ```admonish note
 This event is independent of the initializer functionality.
@@ -8,7 +8,7 @@ This event is independent of the initializer functionality.
 
 ## Definition
 
-The event is called `TrunkApplicationStarted` and is executed after the WebAssembly has been loaded and initialized.
+The event is called `PrankApplicationStarted` and is executed after the WebAssembly has been loaded and initialized.
 
 The event will have custom details:
 
@@ -24,7 +24,7 @@ The following snippet can be used to run code after the initialization of the We
 
 ```html
 <script type="module">
-  addEventListener("TrunkApplicationStarted", (event) => {
+  addEventListener("PrankApplicationStarted", (event) => {
   console.log("application started - bindings:", window.wasmBindings, "WASM:", event.detail.wasm);
   // wasm_ffi is a function exported from WASM to JavaScript
   window.wasmBindings.wasm_ffi();
@@ -34,4 +34,4 @@ The following snippet can be used to run code after the initialization of the We
 </script>
 ```
 
-Also see the vanilla example: <https://github.com/trunk-rs/trunk/tree/main/examples/vanilla>.
+Also see the vanilla example: <https://github.com/prank-rs/prank/tree/main/examples/vanilla>.

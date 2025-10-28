@@ -29,11 +29,11 @@ pub struct Build {
     #[serde(default)]
     pub release: bool,
 
-    /// Cargo profile to use.
+    /// Spago profile to use.
     ///
-    /// Overrides the default chosen by cargo. Ignored if the 'index.html' has one configured.
+    /// Overrides the default chosen by spago. Ignored if the 'index.html' has one configured.
     #[serde(default)]
-    pub cargo_profile: Option<String>,
+    pub spago_profile: Option<String>,
 
     /// The output dir for all final assets
     #[serde(default = "default::dist")]
@@ -43,11 +43,11 @@ pub struct Build {
     #[serde(default)]
     pub offline: bool,
 
-    /// Require Cargo.lock and cache are up to date
+    /// Require Spago.lock and cache are up to date
     #[serde(default)]
     pub frozen: bool,
 
-    /// Require Cargo.lock is up to date
+    /// Require Spago.lock is up to date
     #[serde(default)]
     pub locked: bool,
 
@@ -118,7 +118,7 @@ pub struct Build {
     /// pattern will be replaced with the contents of the target file. This allows insertion of
     /// some big JSON state or even HTML files as a part of the `index.html` build.
     ///
-    /// Trunk will automatically insert the `base`, `wasm` and `js` key/values into this map. In
+    /// Prank will automatically insert the `base`, `wasm` and `js` key/values into this map. In
     /// order for the app to be loaded properly, the patterns `{base}`, `{wasm}` and `{js}` should
     /// be used in `pattern_script` and `pattern_preload`.
     ///
@@ -127,7 +127,7 @@ pub struct Build {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub pattern_params: HashMap<String, String>,
 
-    /// When desired, set a custom root certificate chain (same format as Cargo's config.toml http.cainfo)
+    /// When desired, set a custom root certificate chain (same format as Spago's config.toml http.cainfo)
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub root_certificate: Option<String>,
@@ -210,7 +210,7 @@ impl Default for Build {
             target: default::target(),
             html_output: default::html_output(),
             release: false,
-            cargo_profile: None,
+            spago_profile: None,
             dist: default::dist(),
             offline: false,
             frozen: false,
@@ -262,7 +262,7 @@ mod default {
     }
 
     pub fn nonce_placeholder() -> String {
-        "{{__TRUNK NONCE__}}".to_string()
+        "{{__PRANK NONCE__}}".to_string()
     }
 }
 

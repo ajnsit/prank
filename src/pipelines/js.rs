@@ -1,7 +1,7 @@
 //! JS asset pipeline.
 
 use super::{
-    data_target_path, AssetFile, AttrWriter, Attrs, TrunkAssetPipelineOutput, ATTR_NO_MINIFY,
+    data_target_path, AssetFile, AttrWriter, Attrs, PrankAssetPipelineOutput, ATTR_NO_MINIFY,
     ATTR_SRC,
 };
 use crate::{
@@ -45,7 +45,7 @@ impl Js {
         // Build the path to the target asset.
         let src_attr = attrs
             .get(ATTR_SRC)
-            .context(r#"required attr `src` missing for <script data-trunk ...> element"#)?;
+            .context(r#"required attr `src` missing for <script data-prank ...> element"#)?;
         let mut path = PathBuf::new();
         path.extend(src_attr.split('/'));
         let asset = AssetFile::new(&html_dir, path).await?;
@@ -69,13 +69,13 @@ impl Js {
 
     /// Spawn the pipeline for this asset type.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         tokio::spawn(self.run())
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self) -> Result<TrunkAssetPipelineOutput> {
+    async fn run(self) -> Result<PrankAssetPipelineOutput> {
         let rel_path = crate::common::strip_prefix(&self.asset.path);
         tracing::debug!(path = ?rel_path, "copying & hashing js");
 
@@ -107,7 +107,7 @@ impl Js {
                 )
             })?;
 
-        Ok(TrunkAssetPipelineOutput::Js(JsOutput {
+        Ok(PrankAssetPipelineOutput::Js(JsOutput {
             cfg: self.cfg.clone(),
             id: self.id,
             file,
@@ -137,7 +137,7 @@ impl JsOutput {
         self.integrity.insert_into(&mut attrs);
 
         dom.replace_with_html(
-            &super::trunk_script_id_selector(self.id),
+            &super::prank_script_id_selector(self.id),
             &format!(
                 r#"<script src="{base}{file}"{attrs}{nonce}></script>"#,
                 attrs = AttrWriter::new(&attrs, AttrWriter::EXCLUDE_SCRIPT),

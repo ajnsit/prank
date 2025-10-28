@@ -1,22 +1,22 @@
 # A basic project
 
-For building the web application, `trunk` is running a combination of tools, mainly `cargo build` and `wasm-bindgen`.
-Therefore, having a simple `cargo` project and an `index.html` file as an entry-point is sufficient to get you started.
+For building the web application, `prank` is running a combination of tools, mainly `spago build` and `wasm-bindgen`.
+Therefore, having a simple `spago` project and an `index.html` file as an entry-point is sufficient to get you started.
 
 ## Creating a project
 
 Start with creating a fresh Rust project and change into that folder:
 
 ```shell
-cargo new trunk-hello-world
-cd trunk-hello-world
+spago new prank-hello-world
+cd prank-hello-world
 ```
 
 Add some dependencies for the web:
 
 ```shell
-cargo add wasm-bindgen console_error_panic_hook
-cargo add web_sys -F Window,Document,HtmlElement,Text
+spago add wasm-bindgen console_error_panic_hook
+spago add web_sys -F Window,Document,HtmlElement,Text
 ```
 
 Inside the newly created project, create a file `src/main.rs` with the following content:
@@ -51,10 +51,10 @@ Create an `index.html` in the root of project:
 </html>
 ```
 
-Then, start `trunk` inside that project to have it built and served:
+Then, start `prank` inside that project to have it built and served:
 
 ```shell
-trunk serve --open
+prank serve --open
 ```
 
 This should compile the project, run `wasm_bindgen`, create an `index.html` based on the original file which loads and
@@ -77,4 +77,4 @@ Here are some pointers:
     * [Leptos](https://github.com/gbj/leptos)
     * [Dioxus](https://dioxuslabs.com/)
     * [More](https://github.com/flosse/rust-web-framework-comparison?tab=readme-ov-file#frontend-frameworks-wasm)
-* More `trunk` [examples](https://github.com/trunk-rs/trunk/tree/main/examples)
+* More `prank` [examples](https://github.com/prank-rs/prank/tree/main/examples)

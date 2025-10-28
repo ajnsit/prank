@@ -1,7 +1,7 @@
 //! Icon asset pipeline.
 
 use super::{
-    data_target_path, trunk_id_selector, AssetFile, AttrWriter, Attrs, TrunkAssetPipelineOutput,
+    data_target_path, prank_id_selector, AssetFile, AttrWriter, Attrs, PrankAssetPipelineOutput,
     ATTR_HREF, ATTR_NO_MINIFY,
 };
 use crate::{
@@ -41,7 +41,7 @@ impl Icon {
     ) -> Result<Self> {
         // Build the path to the target asset.
         let href_attr = attrs.get(ATTR_HREF).context(
-            r#"required attr `href` missing for <link data-trunk rel="icon" .../> element"#,
+            r#"required attr `href` missing for <link data-prank rel="icon" .../> element"#,
         )?;
         let mut path = PathBuf::new();
         path.extend(href_attr.split('/'));
@@ -63,13 +63,13 @@ impl Icon {
 
     /// Spawn the pipeline for this asset type.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         tokio::spawn(self.run())
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self) -> Result<TrunkAssetPipelineOutput> {
+    async fn run(self) -> Result<PrankAssetPipelineOutput> {
         let rel_path = crate::common::strip_prefix(&self.asset.path);
         tracing::debug!(path = ?rel_path, "copying & hashing icon");
         let mime_type = mime_guess::from_path(&self.asset.path).first_or_octet_stream();
@@ -102,7 +102,7 @@ impl Icon {
             })?;
 
         tracing::debug!(path = ?rel_path, "finished copying & hashing icon");
-        Ok(TrunkAssetPipelineOutput::Icon(IconOutput {
+        Ok(PrankAssetPipelineOutput::Icon(IconOutput {
             cfg: self.cfg.clone(),
             id: self.id,
             file,
@@ -129,7 +129,7 @@ impl IconOutput {
         self.integrity.insert_into(&mut attrs);
 
         dom.replace_with_html(
-            &trunk_id_selector(self.id),
+            &prank_id_selector(self.id),
             &format!(
                 r#"<link rel="icon" href="{base}{file}"{attrs}{nonce}/>"#,
                 base = &self.cfg.public_url,

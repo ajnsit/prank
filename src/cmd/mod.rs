@@ -1,4 +1,4 @@
-//! Trunk's subcommands
+//! Prank's subcommands
 
 pub mod build;
 pub mod clean;

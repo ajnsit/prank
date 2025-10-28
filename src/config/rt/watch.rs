@@ -54,6 +54,8 @@ pub struct RtcWatch {
     pub paths: Vec<PathBuf>,
     /// Paths to ignore.
     pub ignored_paths: GlobMatcher,
+    /// Paths to reload on change.
+    pub reload_paths: GlobMatcher,
     /// Polling mode for detecting changes if set to `Some(_)`.
     pub poll: Option<Duration>,
     /// Allow enabling a cooldown
@@ -96,11 +98,16 @@ impl RtcWatch {
             no_error_reporting,
         } = opts;
 
-        let Watch { watch, ignore } = config.watch.clone();
+        let Watch {
+            watch,
+            ignore,
+            reload,
+        } = config.watch.clone();
 
         let build = RtcBuild::new(config, build_opts)?;
 
         tracing::debug!("Disable error reporting: {no_error_reporting}");
+
 
         // Take the canonical path of each of the specified watch targets.
         let mut paths = vec![];
@@ -152,10 +159,37 @@ impl RtcWatch {
             ignored_paths.add(glob).map_err(|err| anyhow!(err))?;
         }
 
+        // Add purescript-specific ignores
+        for path_str in &[".spago", "output", "output-es"] {
+            let path = working_dir.join(path_str);
+            if let Some(glob_str) = path.to_str() {
+                if let Ok(glob) = globset::Glob::new(glob_str) {
+                    let _ = ignored_paths.add(glob);
+                }
+                let recursive_path = path.join("**");
+                if let Some(glob_str) = recursive_path.to_str() {
+                    if let Ok(glob) = globset::Glob::new(glob_str) {
+                        let _ = ignored_paths.add(glob);
+                    }
+                }
+            }
+        }
+
+        let mut reload_paths = GlobMatcher::new();
+        for path in reload {
+            let path = working_dir.join(path);
+            let Some(glob) = path.to_str() else {
+                return Err(anyhow!("could not convert {:?} to str", path));
+            };
+            let glob = globset::Glob::new(glob).map_err(|err| anyhow!(err))?;
+            reload_paths.add(glob).map_err(|err| anyhow!(err))?;
+        }
+
         Ok(Self {
             build: Arc::new(build),
             paths,
             ignored_paths,
+            reload_paths,
             poll,
             enable_cooldown,
             clear_screen,

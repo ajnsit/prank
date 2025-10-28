@@ -1,6 +1,6 @@
 [book]
-title = "The Trunk Guide"
-description = "Documention of Trunk, a web application bundler for Rust"
+title = "The Prank Guide"
+description = "Documention of Prank, a web application bundler for Rust"
 src = "src"
 
 multilingual = false
@@ -19,9 +19,9 @@ command = "mdbook-admonish"
 assets_version = "3.0.3" # do not edit: managed by `mdbook-admonish install`
 
 [output.html]
-git-repository-url = "https://github.com/trunk-rs/trunk"
+git-repository-url = "https://github.com/prank-rs/prank"
 git-repository-icon = "fa-github"
-edit-url-template = "https://github.com/trunk-rs/trunk/edit/main/guide/{path}"
+edit-url-template = "https://github.com/prank-rs/prank/edit/main/guide/{path}"
 
 additional-css = [
     "./mdbook-admonish.css",

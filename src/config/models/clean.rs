@@ -11,9 +11,9 @@ pub struct Clean {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[deprecated(note = "Use the global dist field instead")]
     pub dist: Option<PathBuf>,
-    /// Optionally perform a cargo clean
+    /// Optionally remove the .spago dir
     #[serde(default)]
-    pub cargo: bool,
+    pub spago: bool,
 }
 
 impl ConfigModel for Clean {}

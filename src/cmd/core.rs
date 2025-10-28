@@ -6,8 +6,8 @@ use semver::VersionReq;
 #[derive(Clone, Debug, Args)]
 #[command(next_help_heading = "Core")]
 pub struct Core {
-    /// Override the required trunk version
-    #[arg(long, env = "TRUNK_REQUIRED_VERSION")]
+    /// Override the required prank version
+    #[arg(long, env = "PRANK_REQUIRED_VERSION")]
     pub required_version: Option<VersionReq>,
 }
 
@@ -16,7 +16,7 @@ impl Core {
     pub fn apply_to(self, mut config: Configuration) -> anyhow::Result<Configuration> {
         let Self { required_version } = self;
 
-        config.core.trunk_version = required_version.unwrap_or(config.core.trunk_version);
+        config.core.prank_version = required_version.unwrap_or(config.core.prank_version);
 
         Ok(config)
     }

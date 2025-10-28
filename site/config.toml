@@ -1,6 +1,6 @@
-base_url = "https://trunkrs.dev/"
+base_url = "https://prankrs.dev/"
 
-title = "Trunk | Build, bundle & ship your Rust WASM application to the web"
+title = "Prank | Build, bundle & ship your Rust WASM application to the web"
 
 compile_sass = true
 build_search_index = true
@@ -14,11 +14,11 @@ highlight_theme = "inspired-github"
 
 [extra]
 favicon = "rustacean-flat-happy.svg"
-juice_logo_name = "Trunk"
+juice_logo_name = "Prank"
 juice_logo_path = "rustacean-flat-happy.svg"
 juice_extra_menu = [
-    { title = "Guide", link = "https://trunkrs.dev/guide"},
-    { title = "GitHub", link = "https://github.com/trunk-rs/trunk"}
+    { title = "Guide", link = "https://prankrs.dev/guide"},
+    { title = "GitHub", link = "https://github.com/prank-rs/prank"}
 ]
 
 # hide these ad they have moved

@@ -36,7 +36,7 @@ impl Document {
                         r#"Self-closing script tag found.
 
 Replace the self-closing script tag ("<script .../>") with a normally closed one such as "<script ...></script>".
-For more information, please take a look at https://github.com/trunk-rs/trunk/discussions/771."
+For more information, please take a look at https://github.com/prank-rs/prank/discussions/771."
 
 In case this is a false positive, the "--allow-self-closing-script" flag can be used to issue a warning instead."#
                     )
@@ -195,10 +195,10 @@ mod test {
         assert!(doc.is_err());
     }
 
-    /// Ensure we get an error for a self-closing trunk script tag.
+    /// Ensure we get an error for a self-closing prank script tag.
     #[test]
-    fn test_self_closing_trunk_script_tag() {
-        let doc = Document::new("<script data-trunk/>", Default::default());
+    fn test_self_closing_prank_script_tag() {
+        let doc = Document::new("<script data-prank/>", Default::default());
         assert!(doc.is_err());
     }
 }

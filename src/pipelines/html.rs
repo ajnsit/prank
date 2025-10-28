@@ -8,8 +8,8 @@ use crate::{
     config::{rt::RtcBuild, types::WsProtocol},
     hooks::{spawn_hooks, wait_hooks},
     pipelines::{
-        rust::RustApp, Attrs, PipelineStage, TrunkAsset, TrunkAssetPipelineOutput,
-        TrunkAssetReference, TRUNK_ID,
+        purescript::PureScriptApp, Attrs, PipelineStage, PrankAsset, PrankAssetPipelineOutput,
+        PrankAssetReference, PRANK_ID,
     },
     processing::minify::minify_html,
 };
@@ -22,10 +22,10 @@ use tokio::{
     task::{JoinError, JoinHandle},
 };
 
-const PUBLIC_URL_MARKER_ATTR: &str = "data-trunk-public-url";
+const PUBLIC_URL_MARKER_ATTR: &str = "data-prank-public-url";
 const RELOAD_SCRIPT: &str = include_str!("../autoreload.js");
 
-type AssetPipelineHandles = FuturesUnordered<JoinHandle<Result<TrunkAssetPipelineOutput>>>;
+type AssetPipelineHandles = FuturesUnordered<JoinHandle<Result<PrankAssetPipelineOutput>>>;
 
 /// An HTML assets build pipeline.
 ///
@@ -73,13 +73,13 @@ impl HtmlPipeline {
 
     /// Spawn a new pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self: Arc<Self>) -> JoinHandle<Result<()>> {
-        tokio::spawn(self.run())
+    pub fn spawn(self: Arc<Self>, changed_paths: Vec<PathBuf>) -> JoinHandle<Result<()>> {
+        tokio::spawn(self.run(changed_paths))
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self: Arc<Self>) -> Result<()> {
+    async fn run(self: Arc<Self>, changed_paths: Vec<PathBuf>) -> Result<()> {
         tracing::debug!("spawning asset pipelines");
 
         // Spawn and wait on pre-build hooks.
@@ -104,14 +104,14 @@ impl HtmlPipeline {
         //
         // This is the first parsing of the HTML meaning it is pretty likely to receive
         // invalid HTML at this stage.
-        target_html.select_mut(r#"link[data-trunk], script[data-trunk]"#, |el| {
+        target_html.select_mut(r#"link[data-prank], script[data-prank]"#, |el| {
             'l: {
-                el.set_attribute(TRUNK_ID, &id.to_string())?;
+                el.set_attribute(PRANK_ID, &id.to_string())?;
 
                 // Both are function pointers, no need to branch out.
                 let asset_constructor = match el.tag_name().as_str() {
-                    "link" => TrunkAssetReference::Link,
-                    "script" => TrunkAssetReference::Script,
+                    "link" => PrankAssetReference::Link,
+                    "script" => PrankAssetReference::Script,
                     // Just an early break since we won't do anything else.
                     _ => break 'l,
                 };
@@ -124,12 +124,13 @@ impl HtmlPipeline {
                     acc
                 });
 
-                let asset = TrunkAsset::from_html(
+                let asset = PrankAsset::from_html(
                     self.cfg.clone(),
                     self.target_html_dir.clone(),
                     self.ignore_chan.clone(),
                     asset_constructor(attrs),
                     id,
+                    changed_paths.clone(),
                 );
 
                 partial_assets.push(asset);
@@ -138,27 +139,27 @@ impl HtmlPipeline {
             Ok(())
         })?;
 
-        let mut assets: Vec<TrunkAsset> = futures_util::future::join_all(partial_assets)
+        let mut assets: Vec<PrankAsset> = futures_util::future::join_all(partial_assets)
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?;
 
-        // Ensure we have a Rust app pipeline to spawn.
-        let rust_app_nodes = target_html
-            .len(r#"link[data-trunk][rel="rust"][data-type="main"], link[data-trunk][rel="rust"]:not([data-type])"#)?;
+        // Ensure we have a PureScript app pipeline to spawn.
+        let purescript_app_nodes = target_html
+            .len(r#"link[data-prank][rel="purescript"][data-type="main"], link[data-prank][rel="purescript"]:not([data-type])"#)?;
         ensure!(
-            rust_app_nodes <= 1,
-            r#"only one <link data-trunk rel="rust" data-type="main" .../> may be specified"#
+            purescript_app_nodes <= 1,
+            r#"only one <link data-prank rel="purescript" data-type="main" .../> may be specified"#
         );
-        if rust_app_nodes == 0 {
-            if let Some(app) = RustApp::new_default(
+        if purescript_app_nodes == 0 {
+            if let Some(app) = PureScriptApp::new_default(
                 self.cfg.clone(),
                 self.target_html_dir.clone(),
                 self.ignore_chan.clone(),
             )
             .await?
             {
-                assets.push(TrunkAsset::RustApp(app));
+                assets.push(PrankAsset::PureScriptApp(app));
             } else {
                 tracing::warn!("no rust project found")
             };
@@ -166,7 +167,7 @@ impl HtmlPipeline {
 
         // Spawn all asset pipelines.
         let mut pipelines: AssetPipelineHandles = FuturesUnordered::new();
-        pipelines.extend(assets.into_iter().map(TrunkAsset::spawn));
+        pipelines.extend(assets.into_iter().map(PrankAsset::spawn));
         // Spawn all build hooks.
         let build_hooks = spawn_hooks(self.cfg.clone(), PipelineStage::Build);
 
@@ -209,7 +210,7 @@ impl HtmlPipeline {
 
         /// finalize an asset pipeline with a single result
         async fn finalize(
-            asset_res: std::result::Result<Result<TrunkAssetPipelineOutput>, JoinError>,
+            asset_res: std::result::Result<Result<PrankAssetPipelineOutput>, JoinError>,
             target_html: &mut Document,
         ) -> Result<()> {
             let asset = asset_res
@@ -264,7 +265,7 @@ impl HtmlPipeline {
                     "<script{}>{}</script>",
                     nonce_attr(&self.cfg.create_nonce),
                     RELOAD_SCRIPT.replace(
-                        "{{__TRUNK_WS_PROTOCOL__}}",
+                        "{{__PRANK_WS_PROTOCOL__}}",
                         &self.ws_protocol.map(|p| p.to_string()).unwrap_or_default()
                     )
                 ),

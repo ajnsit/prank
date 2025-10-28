@@ -1,7 +1,7 @@
 //! Sass/Scss asset pipeline.
 
 use super::{
-    data_target_path, AssetFile, AttrWriter, Attrs, TrunkAssetPipelineOutput, ATTR_HREF,
+    data_target_path, AssetFile, AttrWriter, Attrs, PrankAssetPipelineOutput, ATTR_HREF,
     ATTR_INLINE, ATTR_NO_MINIFY,
 };
 use crate::{
@@ -46,7 +46,7 @@ impl Sass {
     ) -> Result<Self> {
         // Build the path to the target asset.
         let href_attr = attrs.get(ATTR_HREF).context(
-            r#"required attr `href` missing for <link data-trunk rel="sass|scss" .../> element"#,
+            r#"required attr `href` missing for <link data-prank rel="sass|scss" .../> element"#,
         )?;
         let mut path = PathBuf::new();
         path.extend(href_attr.split('/'));
@@ -71,13 +71,13 @@ impl Sass {
 
     /// Spawn the pipeline for this asset type.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         tokio::spawn(self.run())
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self) -> Result<TrunkAssetPipelineOutput> {
+    async fn run(self) -> Result<PrankAssetPipelineOutput> {
         let version = self.cfg.tools.sass.as_deref();
         let sass = tools::get(
             Application::Sass,
@@ -180,7 +180,7 @@ impl Sass {
         };
 
         tracing::debug!(path = ?rel_path, "finished compiling sass/scss");
-        Ok(TrunkAssetPipelineOutput::Sass(SassOutput {
+        Ok(PrankAssetPipelineOutput::Sass(SassOutput {
             cfg: self.cfg.clone(),
             id: self.id,
             css_ref,
@@ -230,6 +230,6 @@ impl SassOutput {
                 )
             }
         };
-        dom.replace_with_html(&super::trunk_id_selector(self.id), &html)
+        dom.replace_with_html(&super::prank_id_selector(self.id), &html)
     }
 }

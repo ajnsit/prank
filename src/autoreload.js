@@ -2,16 +2,16 @@
 
 (function () {
 
-    const address = '{{__TRUNK_ADDRESS__}}';
-    const base = '{{__TRUNK_WS_BASE__}}';
-    let protocol = '{{__TRUNK_WS_PROTOCOL__}}';
+    const address = '{{__PRANK_ADDRESS__}}';
+    const base = '{{__PRANK_WS_BASE__}}';
+    let protocol = '{{__PRANK_WS_PROTOCOL__}}';
     protocol =
         protocol
             ? protocol
             : window.location.protocol === 'https:'
                 ? 'wss'
                 : 'ws';
-    const url = protocol + '://' + address + base + '.well-known/trunk/ws';
+    const url = protocol + '://' + address + base + '.well-known/prank/ws';
 
     class Overlay {
         constructor() {
@@ -98,7 +98,7 @@
                 () => {
                     // when we successfully reconnect, we'll force a
                     // reload (since we presumably lost connection to
-                    // trunk due to it being killed, so it will have
+                    // prank due to it being killed, so it will have
                     // rebuilt on restart)
                     const ws = new WebSocket(this.url);
                     ws.onopen = () => window.location.reload();

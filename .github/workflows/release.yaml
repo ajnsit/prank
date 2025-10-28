@@ -48,36 +48,36 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
-            name: trunk-x86_64-unknown-linux-gnu.tar.gz
+            name: prank-x86_64-unknown-linux-gnu.tar.gz
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-22.04
-            name: trunk-aarch64-unknown-linux-gnu.tar.gz
+            name: prank-aarch64-unknown-linux-gnu.tar.gz
             cross: "true"
             # cross's container image is too old for us
             args: --features vendored
 
           - target: x86_64-unknown-linux-musl
             os: ubuntu-22.04
-            name: trunk-x86_64-unknown-linux-musl.tar.gz
+            name: prank-x86_64-unknown-linux-musl.tar.gz
             install: |
               sudo apt install -y musl-tools
             args: --features vendored
           - target: aarch64-unknown-linux-musl
             os: ubuntu-22.04
-            name: trunk-aarch64-unknown-linux-musl.tar.gz
+            name: prank-aarch64-unknown-linux-musl.tar.gz
             cross: "true"
             args: --features vendored
 
           - target: x86_64-apple-darwin
             os: macos-13
-            name: trunk-x86_64-apple-darwin.tar.gz
+            name: prank-x86_64-apple-darwin.tar.gz
           - target: aarch64-apple-darwin
             os: macos-14
-            name: trunk-aarch64-apple-darwin.tar.gz
+            name: prank-aarch64-apple-darwin.tar.gz
 
           - target: x86_64-pc-windows-msvc
             os: windows-2022
-            name: trunk-x86_64-pc-windows-msvc.zip
+            name: prank-x86_64-pc-windows-msvc.zip
             ext: ".exe"
             install: |
               echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
@@ -164,10 +164,10 @@ jobs:
           mkdir -p upload
           
           # if we have an alternate target, there is a sub-directory
-          if [[ -f "target/release/trunk${{ matrix.ext }}" ]]; then
-            SRC="target/release/trunk${{ matrix.ext }}"
-          elif [[ -f "target/${{ matrix.target }}/release/trunk${{ matrix.ext }}" ]]; then
-            SRC="target/${{ matrix.target }}/release/trunk${{ matrix.ext }}"
+          if [[ -f "target/release/prank${{ matrix.ext }}" ]]; then
+            SRC="target/release/prank${{ matrix.ext }}"
+          elif [[ -f "target/${{ matrix.target }}/release/prank${{ matrix.ext }}" ]]; then
+            SRC="target/${{ matrix.target }}/release/prank${{ matrix.ext }}"
           else
             echo "Unable to find output"
             find target
@@ -175,27 +175,27 @@ jobs:
           fi
           
           # for upload
-          cp -pv "${SRC}" upload/trunk${{ matrix.ext }}
+          cp -pv "${SRC}" upload/prank${{ matrix.ext }}
 
       - name: Post Build | Strip binary
         if: matrix.cross != 'true'
         working-directory: upload
         run: |
-          ls -l trunk${{matrix.ext}}
-          strip trunk${{matrix.ext}}
-          ls -l trunk${{matrix.ext}}
+          ls -l prank${{matrix.ext}}
+          strip prank${{matrix.ext}}
+          ls -l prank${{matrix.ext}}
 
       - name: Post Build | Prepare artifacts [zip]
         if: endsWith(matrix.name, '.zip')
         working-directory: upload
         run: |
-          7z a ${{ matrix.name }} trunk${{matrix.ext}}
+          7z a ${{ matrix.name }} prank${{matrix.ext}}
 
       - name: Post Build | Prepare artifacts [tar.gz]
         if: endsWith(matrix.name, '.tar.gz')
         working-directory: upload
         run: |
-          tar czvf ${{ matrix.name }} trunk${{matrix.ext}}
+          tar czvf ${{ matrix.name }} prank${{matrix.ext}}
 
       - name: Post Build | Upload artifacts
         uses: actions/upload-artifact@v4
@@ -219,7 +219,7 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Setup | Checksums
-        run: for file in trunk-*/trunk-*; do openssl dgst -sha256 -r "$file" | awk '{print $1}' > "${file}.sha256"; done
+        run: for file in prank-*/prank-*; do openssl dgst -sha256 -r "$file" | awk '{print $1}' > "${file}.sha256"; done
 
       - name: Setup | Install convco
         run: |
@@ -242,7 +242,7 @@ jobs:
             OPTS="${OPTS} -p"
           fi
           gh release create ${OPTS} --title "${{ needs.init.outputs.version }}" -F RELEASE_LOG.md ${TAG} \
-            trunk-*/trunk-*
+            prank-*/prank-*
 
   publish:
     needs: release

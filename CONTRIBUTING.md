@@ -29,7 +29,7 @@ We follow [semver](https://semver.org/spec/v2.0.0.html) for versioning this syst
 
 ## SSL
 
-Trunk can use either `native-tls` or `rustls` for SSL support. `rustls` without `aws-lc-sys` is the default backend, which should build out-of-the-box on all platforms.
+Prank can use either `native-tls` or `rustls` for SSL support. `rustls` without `aws-lc-sys` is the default backend, which should build out-of-the-box on all platforms.
 
 To opt into a different one, you can use the following command:
 ```sh

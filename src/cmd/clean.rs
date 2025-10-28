@@ -18,16 +18,16 @@ use tokio::process::Command;
 #[command(next_help_heading = "Clean")]
 pub struct Clean {
     /// The output dir for all final assets [default: dist]
-    #[arg(short, long, env = "TRUNK_CLEAN_DIST")]
+    #[arg(short, long, env = "PRANK_CLEAN_DIST")]
     pub dist: Option<PathBuf>,
-    /// Optionally perform a cargo clean [default: false]
-    #[arg(long, env = "TRUNK_CLEAN_CARGO")]
-    pub cargo: bool,
-    /// Optionally clean any cached tools used by Trunk [default: false]
+    /// Optionally clean .spago dir [default: false]
+    #[arg(long, env = "PRANK_CLEAN_SPAGO")]
+    pub spago: bool,
+    /// Optionally clean any cached tools used by Prank [default: false]
     ///
     /// These tools are cached in a platform-dependent "projects" dir. Removing them will cause
-    /// them to be downloaded by Trunk next time they are needed.
-    #[arg(short, long, env = "TRUNK_CLEAN_TOOLS")]
+    /// them to be downloaded by Prank next time they are needed.
+    #[arg(short, long, env = "PRANK_CLEAN_TOOLS")]
     pub tools: bool,
 }
 
@@ -36,12 +36,12 @@ impl Clean {
     pub fn apply_to(self, mut config: Configuration) -> Result<Configuration> {
         let Self {
             dist,
-            cargo,
+            spago,
             tools: _, // used by the CLI only
         } = self;
 
-        if cargo {
-            config.clean.cargo = true;
+        if spago {
+            config.clean.spago = true;
         }
 
         // the config.clean.dist is handled by migrations
@@ -67,9 +67,9 @@ impl Clean {
         remove_dir_all(cfg.dist.clone())
             .await
             .context("failed to clean dist directory")?;
-        if cfg.cargo {
-            tracing::debug!("cleaning cargo dir");
-            let output = Command::new("cargo")
+        if cfg.spago {
+            tracing::debug!("cleaning spago dir");
+            let output = Command::new("spago")
                 .arg("clean")
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -82,7 +82,7 @@ impl Clean {
             );
         }
         if cfg.tools {
-            tracing::debug!("cleaning trunk tools cache dir");
+            tracing::debug!("cleaning prank tools cache dir");
             let path = cache_dir().await.context("error getting cache dir path")?;
             remove_dir_all(path)
                 .await
@@ -103,7 +103,7 @@ mod test {
         let mut config = Configuration {
             clean: config::Clean {
                 dist: Some("foo".into()),
-                cargo: true,
+                spago: true,
             },
             ..Default::default()
         };
@@ -111,7 +111,7 @@ mod test {
 
         let result = Clean {
             dist: Some("bar".into()),
-            cargo: false,
+            spago: false,
             tools: true,
         }
         .apply_to(config)
@@ -121,7 +121,7 @@ mod test {
             result,
             Configuration {
                 core: config::models::Core {
-                    trunk_version: Default::default(),
+                    prank_version: Default::default(),
                     // we expect the value from the CLI overrides, but in the core section
                     dist: Some("bar".into())
                 },
@@ -129,7 +129,7 @@ mod test {
                     config::models::Clean {
                         // the dist field in the clean section must be empty
                         dist: None,
-                        cargo: true,
+                        spago: true,
                     }
                 },
                 ..Default::default()

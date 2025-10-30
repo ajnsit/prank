@@ -3,10 +3,10 @@
 
 Since: `0.19.0-alpha.1`.
 
-Trunk supports tapping into the initialization process of the WebAssembly application. By
+Prank supports tapping into the initialization process of the WebAssembly application. By
 default, this is not active and works the same way as with previous versions.
 
-The default process is that trunk injects a small JavaScript snippet, which imports the JavaScript loader generated
+The default process is that prank injects a small JavaScript snippet, which imports the JavaScript loader generated
 by `wasm_bindgen` and calls the `init` method. That will fetch the WASM blob and run it.
 
 The downside of this is, that during this process, there's no feedback for the user. Neither when it takes a bit longer
@@ -40,4 +40,4 @@ export default function myInitializer () {
 };
 ```
 
-For a full example, see: <https://github.com/trunk-rs/trunk/tree/main/examples/initializer>.
+For a full example, see: <https://github.com/prank-rs/prank/tree/main/examples/initializer>.

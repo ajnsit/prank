@@ -26,7 +26,7 @@ use tracing_subscriber::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<ExitCode> {
-    let cli = Trunk::parse();
+    let cli = Prank::parse();
 
     let colored = init_color(&cli);
 
@@ -64,7 +64,7 @@ async fn main() -> Result<ExitCode> {
     })
 }
 
-fn init_color(cli: &Trunk) -> bool {
+fn init_color(cli: &Prank) -> bool {
     if cli.no_color {
         return false;
     }
@@ -86,7 +86,7 @@ fn init_color(cli: &Trunk) -> bool {
     colored
 }
 
-fn eval_logging(cli: &Trunk) -> tracing_subscriber::EnvFilter {
+fn eval_logging(cli: &Prank) -> tracing_subscriber::EnvFilter {
     // allow overriding everything with RUST_LOG or --log
     if let Some(directives) = &cli.log {
         return tracing_subscriber::EnvFilter::new(directives);
@@ -99,24 +99,24 @@ fn eval_logging(cli: &Trunk) -> tracing_subscriber::EnvFilter {
 
     let directives = match (cli.verbose, silent) {
         // quiet overrides verbose
-        (_, true) => "error,trunk=warn",
+        (_, true) => "error,prank=warn",
         // increase verbosity
-        (0, false) => "error,trunk=info",
-        (1, false) => "error,trunk=debug",
-        (_, false) => "error,trunk=trace",
+        (0, false) => "error,prank=info",
+        (1, false) => "error,prank=debug",
+        (_, false) => "error,prank=trace",
     };
 
     tracing_subscriber::EnvFilter::new(directives)
 }
 
-/// Build, bundle & ship your Rust WASM application to the web.
+/// Build, bundle & ship your web application to the web.
 #[derive(Parser)]
 #[command(about, author, version)]
-struct Trunk {
+struct Prank {
     #[command(subcommand)]
-    action: TrunkSubcommands,
-    /// Path to the Trunk config file
-    #[arg(long, env = "TRUNK_CONFIG", global(true))]
+    action: PrankSubcommands,
+    /// Path to the Prank config file
+    #[arg(long, env = "PRANK_CONFIG", global(true))]
     pub config: Option<PathBuf>,
     /// Enable verbose logging.
     #[arg(short, long, global(true), action=ArgAction::Count)]
@@ -129,16 +129,16 @@ struct Trunk {
     pub log: Option<String>,
 
     /// Skip the version check
-    #[arg(long, global(true), env = "TRUNK_SKIP_VERSION_CHECK")]
+    #[arg(long, global(true), env = "PRANK_SKIP_VERSION_CHECK")]
     pub skip_version_check: bool,
 
     /// Run without accessing the network
-    #[arg(long, global(true), env = "TRUNK_OFFLINE")]
+    #[arg(long, global(true), env = "PRANK_OFFLINE")]
     #[arg(default_missing_value = "true", num_args=0..=1)]
     pub offline: Option<bool>,
 
     /// Color mode
-    #[arg(long, env = "TRUNK_COLOR", global(true), value_enum, conflicts_with = "no_color", default_value_t = ColorMode::Auto)]
+    #[arg(long, env = "PRANK_COLOR", global(true), value_enum, conflicts_with = "no_color", default_value_t = ColorMode::Auto)]
     pub color: ColorMode,
 
     /// Support for `NO_COLOR` environment variable
@@ -146,12 +146,12 @@ struct Trunk {
     pub no_color: bool,
 }
 
-impl Trunk {
+impl Prank {
     pub fn prefer_silence(&self) -> bool {
         #[allow(clippy::match_like_matches_macro)]
         match self.action {
-            TrunkSubcommands::Config(_) => true,
-            TrunkSubcommands::Tools(_) => true,
+            PrankSubcommands::Config(_) => true,
+            PrankSubcommands::Tools(_) => true,
             _ => false,
         }
     }
@@ -169,34 +169,34 @@ enum ColorMode {
     Never,
 }
 
-impl Trunk {
+impl Prank {
     #[tracing::instrument(level = "trace", skip(self))]
     pub async fn run(self) -> Result<()> {
         version::update_check(self.skip_version_check | self.offline.unwrap_or_default());
 
         match self.action {
-            TrunkSubcommands::Build(inner) => inner.run(self.config).await,
-            TrunkSubcommands::Clean(inner) => inner.run(self.config).await,
-            TrunkSubcommands::Serve(inner) => inner.run(self.config).await,
-            TrunkSubcommands::Watch(inner) => inner.run(self.config).await,
-            TrunkSubcommands::Config(inner) => inner.run(self.config).await,
-            TrunkSubcommands::Tools(inner) => inner.run(self.config).await,
+            PrankSubcommands::Build(inner) => inner.run(self.config).await,
+            PrankSubcommands::Clean(inner) => inner.run(self.config).await,
+            PrankSubcommands::Serve(inner) => inner.run(self.config).await,
+            PrankSubcommands::Watch(inner) => inner.run(self.config).await,
+            PrankSubcommands::Config(inner) => inner.run(self.config).await,
+            PrankSubcommands::Tools(inner) => inner.run(self.config).await,
         }
     }
 }
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Subcommand)]
-enum TrunkSubcommands {
-    /// Build the Rust WASM app and all of its assets.
+enum PrankSubcommands {
+    /// Build the web app and all of its assets.
     Build(cmd::build::Build),
-    /// Build & watch the Rust WASM app and all of its assets.
+    /// Build & watch the web app and all of its assets.
     Watch(cmd::watch::Watch),
-    /// Build, watch & serve the Rust WASM app and all of its assets.
+    /// Build, watch & serve the web app and all of its assets.
     Serve(cmd::serve::Serve),
     /// Clean output artifacts.
     Clean(cmd::clean::Clean),
-    /// Trunk config controls.
+    /// Prank config controls.
     Config(cmd::config::Config),
     /// Working with tools
     Tools(cmd::tools::Tools),
@@ -204,11 +204,11 @@ enum TrunkSubcommands {
 
 #[cfg(test)]
 mod tests {
-    use crate::Trunk;
+    use crate::Prank;
 
     #[test]
     fn verify_cli() {
         use clap::CommandFactory;
-        Trunk::command().debug_assert();
+        Prank::command().debug_assert();
     }
 }

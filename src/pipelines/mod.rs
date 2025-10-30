@@ -9,7 +9,7 @@ mod html;
 mod icon;
 mod inline;
 mod js;
-mod rust;
+mod purescript;
 mod sass;
 mod tailwind_css;
 mod tailwind_css_extra;
@@ -26,7 +26,7 @@ use crate::{
         icon::{Icon, IconOutput},
         inline::{Inline, InlineOutput},
         js::{Js, JsOutput},
-        rust::{RustApp, RustAppOutput},
+        purescript::{PureScriptApp, PureScriptAppOutput},
         sass::{Sass, SassOutput},
         tailwind_css::{TailwindCss, TailwindCssOutput},
         tailwind_css_extra::{TailwindCssExtra, TailwindCssExtraOutput},
@@ -58,7 +58,7 @@ const ATTR_NO_MINIFY: &str = "data-no-minify";
 const ATTR_TARGET_PATH: &str = "data-target-path";
 
 const SNIPPETS_DIR: &str = "snippets";
-const TRUNK_ID: &str = "data-trunk-id";
+const PRANK_ID: &str = "data-prank-id";
 const PNG_OPTIMIZATION_LEVEL: u8 = 6;
 
 #[derive(Debug, Clone)]
@@ -67,23 +67,23 @@ pub struct Attr {
     pub need_escape: bool,
 }
 
-/// A mapping of all attrs associated with a specific `<link data-trunk .../>` element.
+/// A mapping of all attrs associated with a specific `<link data-prank .../>` element.
 pub type Attrs = HashMap<String, Attr>;
 
-/// A reference to a trunk asset.
-pub enum TrunkAssetReference {
+/// A reference to a prank asset.
+pub enum PrankAssetReference {
     Link(Attrs),
     Script(Attrs),
 }
 
-/// A model of all of the supported Trunk asset links expressed in the source HTML as
-/// `<trunk-link/>` elements.
+/// A model of all of the supported Prank asset links expressed in the source HTML as
+/// `<prank-link/>` elements.
 ///
-/// Trunk will remove all `<trunk-link .../>` elements found in the HTML. It is the responsibility
+/// Prank will remove all `<prank-link .../>` elements found in the HTML. It is the responsibility
 /// of each pipeline to implement a pipeline finalizer method for its pipeline output in order to
 /// update the finalized HTML for asset links and the like.
 #[allow(clippy::large_enum_variant)]
-pub enum TrunkAsset {
+pub enum PrankAsset {
     Css(Css),
     Sass(Sass),
     TailwindCss(TailwindCss),
@@ -93,7 +93,7 @@ pub enum TrunkAsset {
     Inline(Inline),
     CopyFile(CopyFile),
     CopyDir(CopyDir),
-    RustApp(RustApp),
+    PureScriptApp(PureScriptApp),
 }
 
 impl<S: Display> From<S> for Attr {
@@ -119,19 +119,20 @@ impl AsRef<str> for Attr {
     }
 }
 
-impl TrunkAsset {
+impl PrankAsset {
     /// Construct a new instance.
     pub async fn from_html(
         cfg: Arc<RtcBuild>,
         html_dir: Arc<PathBuf>,
         ignore_chan: Option<mpsc::Sender<Vec<PathBuf>>>,
-        reference: TrunkAssetReference,
+        reference: PrankAssetReference,
         id: usize,
+        changed_paths: Vec<PathBuf>,
     ) -> Result<Self> {
         match reference {
-            TrunkAssetReference::Link(attrs) => {
+            PrankAssetReference::Link(attrs) => {
                 let rel = attrs.get(ATTR_REL).context(
-                    "all <link data-trunk .../> elements must have a `rel` attribute indicating \
+                    "all <link data-prank .../> elements must have a `rel` attribute indicating \
                      the asset type",
                 )?;
                 Ok(match rel.value.as_str() {
@@ -149,9 +150,9 @@ impl TrunkAsset {
                     CopyDir::TYPE_COPY_DIR => {
                         Self::CopyDir(CopyDir::new(cfg, html_dir, attrs, id).await?)
                     }
-                    RustApp::TYPE_RUST_APP => {
-                        Self::RustApp(RustApp::new(cfg, html_dir, ignore_chan, attrs, id).await?)
-                    }
+                    PureScriptApp::TYPE_PURESCRIPT_APP => Self::PureScriptApp(
+                        PureScriptApp::new(cfg, html_dir, ignore_chan, attrs, id, changed_paths).await?,
+                    ),
                     TailwindCss::TYPE_TAILWIND_CSS => {
                         Self::TailwindCss(TailwindCss::new(cfg, html_dir, attrs, id).await?)
                     }
@@ -159,19 +160,19 @@ impl TrunkAsset {
                         TailwindCssExtra::new(cfg, html_dir, attrs, id).await?,
                     ),
                     _ => bail!(
-                        r#"unknown <link data-trunk .../> attr value `rel="{}"`; please ensure the value is lowercase and is a supported asset type"#,
+                        r#"unknown <link data-prank .../> attr value `rel="{}"`; please ensure the value is lowercase and is a supported asset type"#,
                         rel.value
                     ),
                 })
             }
-            TrunkAssetReference::Script(attrs) => {
+            PrankAssetReference::Script(attrs) => {
                 Ok(Self::Js(Js::new(cfg, html_dir, attrs, id).await?))
             }
         }
     }
 
     /// Spawn the build pipeline for this asset.
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         match self {
             Self::Css(inner) => inner.spawn(),
             Self::Sass(inner) => inner.spawn(),
@@ -182,13 +183,13 @@ impl TrunkAsset {
             Self::Inline(inner) => inner.spawn(),
             Self::CopyFile(inner) => inner.spawn(),
             Self::CopyDir(inner) => inner.spawn(),
-            Self::RustApp(inner) => inner.spawn(),
+            Self::PureScriptApp(inner) => inner.spawn(),
         }
     }
 }
 
-/// The output of a `<trunk-link/>` asset pipeline.
-pub enum TrunkAssetPipelineOutput {
+/// The output of a `<prank-link/>` asset pipeline.
+pub enum PrankAssetPipelineOutput {
     Css(CssOutput),
     Sass(SassOutput),
     TailwindCss(TailwindCssOutput),
@@ -198,24 +199,24 @@ pub enum TrunkAssetPipelineOutput {
     Inline(InlineOutput),
     CopyFile(CopyFileOutput),
     CopyDir(CopyDirOutput),
-    RustApp(RustAppOutput),
+    PureScriptApp(PureScriptAppOutput),
     None,
 }
 
-impl TrunkAssetPipelineOutput {
+impl PrankAssetPipelineOutput {
     pub async fn finalize(self, dom: &mut Document) -> Result<()> {
         match self {
-            TrunkAssetPipelineOutput::Css(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::Sass(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::TailwindCss(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::TailwindCssExtra(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::Js(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::Icon(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::Inline(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::CopyFile(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::CopyDir(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::RustApp(out) => out.finalize(dom).await,
-            TrunkAssetPipelineOutput::None => Ok(()),
+            PrankAssetPipelineOutput::Css(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::Sass(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::TailwindCss(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::TailwindCssExtra(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::Js(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::Icon(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::Inline(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::CopyFile(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::CopyDir(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::PureScriptApp(out) => out.finalize(dom).await,
+            PrankAssetPipelineOutput::None => Ok(()),
         }
     }
 }
@@ -369,14 +370,14 @@ pub enum PipelineStage {
     PostBuild,
 }
 
-/// Create the CSS selector for selecting a trunk link by ID.
-fn trunk_id_selector(id: usize) -> String {
-    format!(r#"link[{TRUNK_ID}="{id}"]"#)
+/// Create the CSS selector for selecting a prank link by ID.
+fn prank_id_selector(id: usize) -> String {
+    format!(r#"link[{PRANK_ID}="{id}"]"#)
 }
 
-/// Create the CSS selector for selecting a trunk script by ID.
-fn trunk_script_id_selector(id: usize) -> String {
-    format!(r#"script[{TRUNK_ID}="{id}"]"#)
+/// Create the CSS selector for selecting a prank script by ID.
+fn prank_script_id_selector(id: usize) -> String {
+    format!(r#"script[{PRANK_ID}="{id}"]"#)
 }
 
 /// A Display impl that writes out a hashmap of attributes into an html tag.
@@ -386,7 +387,7 @@ fn trunk_script_id_selector(id: usize) -> String {
 /// - It begins with a space.
 /// - Any values are HTML-escaped.
 /// - It sorts the keys by name for deterministic results.
-/// - It ignores the data-trunk attributes
+/// - It ignores the data-prank attributes
 /// - It ignores anything in the `exclude` list
 /// - Values that are an empty string are written with the empty `<link ... disabled ... />` syntax
 ///   instead of `disabled=""`.
@@ -399,7 +400,7 @@ impl<'a> AttrWriter<'a> {
     /// Note: we additionally exclude `type="text/css"` etc on inline, because on a <style>
     /// element it is a deprecated attribute.
     pub(self) const EXCLUDE_CSS_INLINE: &'static [&'static str] = &[
-        TRUNK_ID,
+        PRANK_ID,
         ATTR_HREF,
         ATTR_REL,
         ATTR_INLINE,
@@ -411,7 +412,7 @@ impl<'a> AttrWriter<'a> {
     /// Whereas on link elements, the MIME type for css is A-OK. You can even specify a custom
     /// MIME type.
     pub(self) const EXCLUDE_CSS_LINK: &'static [&'static str] = &[
-        TRUNK_ID,
+        PRANK_ID,
         ATTR_HREF,
         ATTR_REL,
         ATTR_INLINE,
@@ -435,7 +436,7 @@ impl fmt::Display for AttrWriter<'_> {
             .attrs
             .keys()
             .map(|x| x.as_str())
-            .filter(|name| !name.starts_with("data-trunk"))
+            .filter(|name| !name.starts_with("data-prank"))
             .filter(|name| !self.exclude.contains(name))
             .collect();
         // Sort for consistency

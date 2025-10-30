@@ -41,7 +41,7 @@ pub trait ConfigModel {
     }
 }
 
-/// The persisted Trunk configuration model
+/// The persisted Prank configuration model
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct Configuration {
     #[serde(flatten)]

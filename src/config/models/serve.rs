@@ -46,7 +46,7 @@ pub struct Serve {
     pub no_spa: bool,
     /// Protocol used for the auto-reload WebSockets connection
     pub ws_protocol: Option<WsProtocol>,
-    /// The path to the trunk web-socket
+    /// The path to the prank web-socket
     #[serde(default)]
     pub ws_base: Option<String>,
     /// The TLS key file to enable TLS encryption

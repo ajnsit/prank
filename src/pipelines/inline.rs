@@ -1,6 +1,6 @@
 //! Inline asset pipeline.
 
-use super::{trunk_id_selector, AssetFile, Attrs, TrunkAssetPipelineOutput, ATTR_HREF, ATTR_TYPE};
+use super::{prank_id_selector, AssetFile, Attrs, PrankAssetPipelineOutput, ATTR_HREF, ATTR_TYPE};
 use crate::common::html_rewrite::Document;
 use crate::common::nonce_attr;
 use crate::config::rt::RtcBuild;
@@ -33,7 +33,7 @@ impl Inline {
         id: usize,
     ) -> Result<Self> {
         let href_attr = attrs.get(ATTR_HREF).context(
-            r#"required attr `href` missing for <link data-trunk rel="inline" .../> element"#,
+            r#"required attr `href` missing for <link data-prank rel="inline" .../> element"#,
         )?;
 
         let mut path = PathBuf::new();
@@ -53,19 +53,19 @@ impl Inline {
 
     /// Spawn the pipeline for this asset type.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         tokio::spawn(self.run())
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self) -> Result<TrunkAssetPipelineOutput> {
+    async fn run(self) -> Result<PrankAssetPipelineOutput> {
         let rel_path = crate::common::strip_prefix(&self.asset.path);
         tracing::debug!(path = ?rel_path, "reading file content");
         let content = self.asset.read_to_string().await?;
         tracing::debug!(path = ?rel_path, "finished reading file content");
 
-        Ok(TrunkAssetPipelineOutput::Inline(InlineOutput {
+        Ok(PrankAssetPipelineOutput::Inline(InlineOutput {
             id: self.id,
             cfg: self.cfg,
             content,
@@ -97,7 +97,7 @@ impl ContentType {
             None => match ext {
                 Some(ext) => Self::from_str(ext),
                 None => bail!(
-                    r#"unknown type value for <link data-trunk rel="inline" .../> attr; please ensure the value is lowercase and is a supported content type"#,
+                    r#"unknown type value for <link data-prank rel="inline" .../> attr; please ensure the value is lowercase and is a supported content type"#,
                 ),
             },
         }
@@ -115,7 +115,7 @@ impl FromStr for ContentType {
             "svg" => Ok(Self::Svg),
             "mjs" | "module" => Ok(Self::Module),
             s => bail!(
-                r#"unknown `type="{}"` value for <link data-trunk rel="inline" .../> attr; please ensure the value is lowercase and is a supported content type"#,
+                r#"unknown `type="{}"` value for <link data-prank rel="inline" .../> attr; please ensure the value is lowercase and is a supported content type"#,
                 s
             ),
         }
@@ -145,6 +145,6 @@ impl InlineOutput {
             ContentType::Module => format!(r#"<script type="module"{nonce}>{}</script>"#, self.content),
         };
 
-        dom.replace_with_html(&trunk_id_selector(self.id), &html)
+        dom.replace_with_html(&prank_id_selector(self.id), &html)
     }
 }

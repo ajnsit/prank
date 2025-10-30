@@ -15,7 +15,16 @@ use crate::pipelines::HtmlPipeline;
 
 pub type BuildResult = Result<()>;
 
-/// A system used for building a Rust WASM app & bundling its assets.
+/// The mode in which to run the build.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
+pub enum BuildMode {
+    /// Only build assets.
+    AssetsOnly,
+    /// Run a full build.
+    Full,
+}
+
+/// A system used for building a PureScript Web app & bundling its assets.
 ///
 /// This unit of data should be used throughout the system for driving build processes and
 /// bundling tasks. Different CLI commands which need to trigger builds in some way should
@@ -44,9 +53,9 @@ impl BuildSystem {
 
     /// Build the application described in the given build data.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub async fn build(&mut self) -> Result<()> {
+    pub async fn build(&mut self, mode: BuildMode, changed_paths: Vec<PathBuf>) -> Result<()> {
         tracing::info!("{}starting build", BUILDING);
-        let res = self.do_build().await;
+        let res = self.do_build(mode, changed_paths).await;
         match res {
             Ok(_) => {
                 tracing::info!("{}success", SUCCESS);
@@ -60,7 +69,7 @@ impl BuildSystem {
     }
 
     /// Internal business logic of `build`.
-    async fn do_build(&mut self) -> Result<()> {
+    async fn do_build(&mut self, _mode: BuildMode, changed_paths: Vec<PathBuf>) -> Result<()> {
         // Ensure the output dist directories are in place.
         fs::create_dir_all(self.cfg.final_dist.as_path())
             .await
@@ -79,7 +88,7 @@ impl BuildSystem {
         // the source HTML, and will ultimately generate and write the final HTML.
         self.html_pipeline
             .clone()
-            .spawn()
+            .spawn(changed_paths)
             .await
             .context("error joining HTML pipeline")?
             // we name if "build" pipeline here, was that's what it has become, and

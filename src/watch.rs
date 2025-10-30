@@ -48,7 +48,7 @@ const DEBOUNCE_DURATION: Duration = Duration::from_millis(25);
 /// The duration of time during which watcher events will be ignored following a build.
 ///
 /// There are various OS syscalls which can trigger FS changes, even though semantically
-/// no changes were made. A notorious example which has plagued the trunk
+/// no changes were made. A notorious example which has plagued the prank
 /// watcher implementation is `std::fs::copy`, which will trigger watcher
 /// changes indicating that file contents have been modified.
 ///
@@ -63,6 +63,8 @@ pub struct WatchSystem {
     build: Arc<Mutex<BuildSystem>>,
     /// The current vector of paths to be ignored.
     ignored_paths: GlobMatcher,
+    /// The current vector of paths to reload on change.
+    reload_paths: GlobMatcher,
     /// A channel of FS watch events.
     watch_rx: mpsc::Receiver<DebouncedEvent>,
     /// A channel of new paths to ignore from the build system.
@@ -95,6 +97,16 @@ pub struct WatchSystem {
     clear_screen: bool,
     /// Don't send build errors to the frontend.
     no_error_reporting: bool,
+    /// Whether the build is in release mode.
+    release: bool,
+    /// Paths that have changed in the current build cycle.
+    changed_paths: Arc<Mutex<Vec<PathBuf>>>,
+}
+
+enum EventRelevance {
+    Relevant(PathBuf),
+    Reload(PathBuf),
+    NotRelevant,
 }
 
 impl WatchSystem {
@@ -127,6 +139,7 @@ impl WatchSystem {
         Ok(Self {
             build,
             ignored_paths: cfg.ignored_paths.clone(),
+            reload_paths: cfg.reload_paths.clone(),
             watch_rx,
             ignore_rx,
             build_rx,
@@ -140,13 +153,19 @@ impl WatchSystem {
             watcher_cooldown,
             clear_screen: cfg.clear_screen,
             no_error_reporting: cfg.no_error_reporting,
+            release: cfg.build.release,
+            changed_paths: Arc::new(Mutex::new(Vec::new())),
         })
     }
 
     /// Run a build.
     #[tracing::instrument(level = "trace", skip(self))]
     pub async fn build(&mut self) -> Result<()> {
-        self.build.lock().await.build().await
+        self.build
+            .lock()
+            .await
+            .build(crate::build::BuildMode::Full, Vec::new())
+            .await
     }
 
     /// Run the watch system, responding to events and triggering builds.
@@ -201,10 +220,15 @@ impl WatchSystem {
 
         let build = self.build.clone();
         let build_tx = self.build_tx.clone();
+        let changed_paths = self.changed_paths.lock().await.drain(..).collect();
 
         tokio::spawn(async move {
             // run the build
-            let result = build.lock().await.build().await;
+            let result = build
+                .lock()
+                .await
+                .build(crate::build::BuildMode::Full, changed_paths)
+                .await;
             // report the result
             build_tx.send(result).await
         });
@@ -252,24 +276,35 @@ impl WatchSystem {
             event.kind
         );
 
-        if !self.is_event_relevant(&event).await {
-            tracing::trace!("Event not relevant, skipping");
-            return;
+        match self.is_event_relevant(&event).await {
+            EventRelevance::NotRelevant => {
+                tracing::trace!("Event not relevant, skipping");
+            }
+            EventRelevance::Reload(path) => {
+                tracing::debug!(path = ?path, "Reloading due to change");
+                if let Some(tx) = &mut self.ws_state {
+                    let _ = tx.send_replace(ws::State::Ok);
+                }
+            }
+            EventRelevance::Relevant(path) => {
+                tracing::debug!(path = ?path, "Triggering build due to change");
+                // Add the changed path to the list.
+                self.changed_paths.lock().await.push(path);
+                // record time of the last accepted change
+                self.last_change = Instant::now();
+
+                if self.is_build_active() {
+                    tracing::debug!("Build is active, postponing start");
+                    return;
+                }
+
+                // Else, time to trigger a build.
+                self.check_spawn_build().await;
+            }
         }
-
-        // record time of the last accepted change
-        self.last_change = Instant::now();
-
-        if self.is_build_active() {
-            tracing::debug!("Build is active, postponing start");
-            return;
-        }
-
-        // Else, time to trigger a build.
-        self.check_spawn_build().await;
     }
 
-    async fn is_event_relevant(&self, event: &DebouncedEvent) -> bool {
+    async fn is_event_relevant(&self, event: &DebouncedEvent) -> EventRelevance {
         // Check each path in the event for a match.
         match event.event.kind {
             EventKind::Modify(
@@ -280,7 +315,7 @@ impl WatchSystem {
             )
             | EventKind::Create(_)
             | EventKind::Remove(_) => (),
-            _ => return false,
+            _ => return EventRelevance::NotRelevant,
         };
 
         for ev_path in &event.paths {
@@ -305,13 +340,23 @@ impl WatchSystem {
                 continue; // Don't emit a notification as path is on the blacklist.
             }
 
+            // Check reload paths.
+            if self.reload_paths.is_match(&ev_path) {
+                tracing::debug!("accepted change in {:?} of type {:?}", ev_path, event.kind);
+                if self.release {
+                    return EventRelevance::NotRelevant;
+                } else {
+                    return EventRelevance::Reload(ev_path);
+                }
+            }
+
             // If all of the above checks have passed, then we need to trigger a build.
             tracing::debug!("accepted change in {:?} of type {:?}", ev_path, event.kind);
             // But we can return early, as we don't need to check the remaining changes
-            return true;
+            return EventRelevance::Relevant(ev_path);
         }
 
-        false
+        EventRelevance::NotRelevant
     }
 
     fn update_ignore_list(&mut self, arg_path: PathBuf) {
@@ -381,7 +426,7 @@ fn build_watcher(
     };
 
     // Create a recursive watcher on each of the given paths.
-    // NOTE WELL: it is expected that all given paths are canonical. The Trunk config
+    // NOTE WELL: it is expected that all given paths are canonical. The Prank config
     // system currently ensures that this is true for all data coming from the
     // RtcBuild/RtcWatch/RtcServe/&c runtime config objects.
     for path in paths {

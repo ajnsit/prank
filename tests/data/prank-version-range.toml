@@ -1,0 +1,4 @@
+prank-version = ">=0.17, <0.19"
+
+[build]
+target = "../../examples/yew/index.html"

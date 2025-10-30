@@ -1,17 +1,18 @@
 [package]
-name = "trunk"
+name = "prank"
 version = "0.21.14"
 edition = "2021"
-description = "Build, bundle & ship your Rust WASM application to the web."
+description = "Build, bundle & ship your PureScript web application to the web."
 license = "MIT/Apache-2.0"
 authors = [
+    "Anupam Jain <ajnsit@gmail.com>",
     "Anthony Dodd <dodd.anthonyjosiah@gmail.com>",
     "Jens Reimann <ctron@dentrassi.de>",
 ]
-repository = "https://github.com/trunk-rs/trunk"
+repository = "https://forge.id1.in/aj/prank"
 readme = "README.md"
-categories = ["command-line-utilities", "wasm", "web-programming"]
-keywords = ["wasm", "bundler", "web", "build-tool", "compiler"]
+categories = ["command-line-utilities", "purescript", "web-programming"]
+keywords = ["bundler", "web", "build-tool"]
 rust-version = "1.81.0"
 
 [profile.release]
@@ -26,7 +27,6 @@ axum-server = "0.7"
 base64 = "0.22"
 bytes = "1"
 cargo-lock = "10"
-cargo_metadata = "0.19.1"
 clap = { version = "4", features = ["derive", "env"] }
 console = "0.15"
 directories = "6"
@@ -75,7 +75,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "7"
 zip = "2"
 
-# pin lightningcss, used by trunk, also pulled in by minify-html
+# pin lightningcss, used by prank, also pulled in by minify-html
 lightningcss = "=1.0.0-alpha.65"
 
 # required for the update check

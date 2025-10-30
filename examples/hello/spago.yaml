@@ -1,0 +1,16 @@
+package:
+  name: prank-example
+  dependencies:
+    - console
+    - effect
+    - prelude
+    - web-dom
+    - web-html
+    - aff
+  test:
+    main: Test.Main
+    dependencies: []
+workspace:
+  packageSet:
+    registry: 67.0.1
+  extraPackages: {}

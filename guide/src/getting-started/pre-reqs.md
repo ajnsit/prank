@@ -1,11 +1,11 @@
 # Pre-requisites
 
-While `trunk` tries to fetch tools automatically as needed (unless you're running with `--offline`), some
+While `prank` tries to fetch tools automatically as needed (unless you're running with `--offline`), some
 pre-requisites may be required, depending on your environment.
 
 ## Rust
 
-It might be obvious, but `trunk` requires an installation of Rust. Not only when installing `trunk` itself from sources,
+It might be obvious, but `prank` requires an installation of Rust. Not only when installing `prank` itself from sources,
 but also for compiling the Rust-based projects to WebAssembly.
 
 The instructions of installing Rust may vary based on your operating system, a reasonable default comes from the Rust
@@ -14,7 +14,7 @@ project: <https://www.rust-lang.org/learn/get-started>
 Once installed, you should have the following tools available on your command line:
 
 * `rustup`
-* `cargo`
+* `spago`
 
 ## WebAssembly target
 

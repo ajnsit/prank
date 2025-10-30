@@ -27,7 +27,7 @@ impl Tools {
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum ToolsSubcommands {
-    /// Show Trunk's tool versions
+    /// Show Prank's tool versions
     Show,
 }
 

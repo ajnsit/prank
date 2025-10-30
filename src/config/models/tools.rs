@@ -12,32 +12,39 @@ use serde::Deserialize;
 pub struct Tools {
     /// Version of `dart-sass` to use.
     #[serde(default)]
-    #[arg(env = "TRUNK_TOOLS_SASS")]
+    #[arg(env = "PRANK_TOOLS_SASS")]
     pub sass: Option<String>,
-
-    /// Version of `wasm-bindgen` to use.
-    #[serde(default)]
-    #[arg(env = "TRUNK_TOOLS_WASM_BINDGEN")]
-    pub wasm_bindgen: Option<String>,
-
-    /// Version of `wasm-opt` to use.
-    #[serde(default)]
-    #[arg(env = "TRUNK_TOOLS_WASM_OPT")]
-    pub wasm_opt: Option<String>,
 
     /// Version of `tailwindcss-cli` to use.
     #[serde(default)]
-    #[arg(env = "TRUNK_TOOLS_TAILWINDCSS")]
+    #[arg(env = "PRANK_TOOLS_TAILWINDCSS")]
     pub tailwindcss: Option<String>,
+
+    /// Version of `purescript-backend-es` to use.
+    #[serde(default)]
+    #[arg(env = "PRANK_TOOLS_PURESCRIPT_BACKEND_ES")]
+    pub purescript_backend_es: Option<String>,
+
+    /// Version of `spago` to use.
+    #[serde(default)]
+    #[arg(env = "PRANK_TOOLS_SPAGO")]
+    pub spago: Option<String>,
+
+    /// Version of `purs-tidy` to use.
+    #[serde(default)]
+    #[arg(env = "PRANK_TOOLS_PURS_TIDY")]
+    pub purs_tidy: Option<String>,
 }
 
 impl Tools {
     pub fn apply_to(self, mut config: Configuration) -> anyhow::Result<Configuration> {
         config.tools.sass = self.sass.or(config.tools.sass);
-        config.tools.wasm_bindgen = self.wasm_bindgen.or(config.tools.wasm_bindgen);
-        config.tools.wasm_opt = self.wasm_opt.or(config.tools.wasm_opt);
         config.tools.tailwindcss = self.tailwindcss.or(config.tools.tailwindcss);
-
+        config.tools.purescript_backend_es = self
+            .purescript_backend_es
+            .or(config.tools.purescript_backend_es);
+        config.tools.spago = self.spago.or(config.tools.spago);
+        config.tools.purs_tidy = self.purs_tidy.or(config.tools.purs_tidy);
         Ok(config)
     }
 }

@@ -1,7 +1,7 @@
 //! CSS asset pipeline.
 
 use super::{
-    data_target_path, AssetFile, AttrWriter, Attrs, TrunkAssetPipelineOutput, ATTR_HREF,
+    data_target_path, AssetFile, AttrWriter, Attrs, PrankAssetPipelineOutput, ATTR_HREF,
     ATTR_NO_MINIFY,
 };
 use crate::{
@@ -44,7 +44,7 @@ impl Css {
     ) -> Result<Self> {
         // Build the path to the target asset.
         let href_attr = attrs.get(ATTR_HREF).context(
-            r#"required attr `href` missing for <link data-trunk rel="css" .../> element"#,
+            r#"required attr `href` missing for <link data-prank rel="css" .../> element"#,
         )?;
         let mut path = PathBuf::new();
         path.extend(href_attr.split('/'));
@@ -67,13 +67,13 @@ impl Css {
 
     /// Spawn the pipeline for this asset type.
     #[tracing::instrument(level = "trace", skip(self))]
-    pub fn spawn(self) -> JoinHandle<Result<TrunkAssetPipelineOutput>> {
+    pub fn spawn(self) -> JoinHandle<Result<PrankAssetPipelineOutput>> {
         tokio::spawn(self.run())
     }
 
     /// Run this pipeline.
     #[tracing::instrument(level = "trace", skip(self))]
-    async fn run(self) -> Result<TrunkAssetPipelineOutput> {
+    async fn run(self) -> Result<PrankAssetPipelineOutput> {
         let rel_path = crate::common::strip_prefix(&self.asset.path);
         tracing::debug!(path = ?rel_path, "copying & hashing css");
 
@@ -101,7 +101,7 @@ impl Css {
                 )
             })?;
 
-        Ok(TrunkAssetPipelineOutput::Css(CssOutput {
+        Ok(PrankAssetPipelineOutput::Css(CssOutput {
             cfg: self.cfg.clone(),
             id: self.id,
             file,
@@ -132,7 +132,7 @@ impl CssOutput {
         self.integrity.insert_into(&mut attrs);
 
         dom.replace_with_html(
-            &super::trunk_id_selector(self.id),
+            &super::prank_id_selector(self.id),
             &format!(
                 r#"<link rel="stylesheet" href="{base}{file}"{attrs}/>"#,
                 base = &self.cfg.public_url,

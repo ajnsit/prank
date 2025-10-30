@@ -1,7 +1,7 @@
 use anyhow::bail;
 use semver::{Version, VersionReq};
 
-/// Ensure that we are the right trunk version for the project
+/// Ensure that we are the right prank version for the project
 pub(crate) fn enforce_version_with(required: &VersionReq, actual: Version) -> anyhow::Result<()> {
     tracing::debug!("Enforce version - actual: {actual}, required: {required}");
 
@@ -14,7 +14,7 @@ pub(crate) fn enforce_version_with(required: &VersionReq, actual: Version) -> an
     tracing::debug!("Current version: {actual}, required version: {required}, matches: {outcome}");
 
     if !outcome {
-        bail!("Project requires a trunk version of '{required}', the current trunk version is: '{actual}'");
+        bail!("Project requires a prank version of '{required}', the current prank version is: '{actual}'");
     }
 
     Ok(())

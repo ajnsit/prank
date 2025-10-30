@@ -6,7 +6,7 @@ use std::path::PathBuf;
 /// Runtime config for the core project.
 #[derive(Clone, Debug)]
 pub struct RtcCore {
-    pub trunk_version: VersionReq,
+    pub prank_version: VersionReq,
     pub working_directory: PathBuf,
     pub dist: PathBuf,
 }
@@ -20,7 +20,7 @@ impl RtcCore {
     pub(super) fn new(config: Core, opts: CoreOptions) -> anyhow::Result<Self> {
         let CoreOptions { working_directory } = opts;
 
-        let trunk_version = config.trunk_version.clone();
+        let prank_version = config.prank_version.clone();
 
         let working_directory = dunce::canonicalize(&working_directory)
             .with_context(|| format!("unable to canonicalize '{}'", working_directory.display()))?;
@@ -29,29 +29,29 @@ impl RtcCore {
             working_directory.join(config.dist.as_deref().unwrap_or_else(|| DIST_DIR.as_ref()));
 
         Ok(Self {
-            trunk_version,
+            prank_version,
             working_directory,
             dist,
         })
     }
 
-    /// Ensure that we are the right trunk version for the project
+    /// Ensure that we are the right prank version for the project
     pub(crate) fn enforce_version(self: &RtcCore) -> anyhow::Result<()> {
         let actual = match Version::parse(crate::version::VERSION) {
             Err(err) => {
-                tracing::warn!("Unable to parse trunk version, skipping version check: {err}");
+                tracing::warn!("Unable to parse prank version, skipping version check: {err}");
                 return Ok(());
             }
             Ok(version) => version,
         };
 
-        enforce_version_with(&self.trunk_version, actual)
+        enforce_version_with(&self.prank_version, actual)
     }
 
     #[cfg(test)]
     pub(super) fn new_test(root: &std::path::Path) -> Self {
         RtcCore {
-            trunk_version: VersionReq::STAR,
+            prank_version: VersionReq::STAR,
             working_directory: root.to_path_buf(),
             dist: root.join(DIST_DIR),
         }

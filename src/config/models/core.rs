@@ -8,10 +8,9 @@ use std::path::PathBuf;
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub struct Core {
     #[serde(default)]
-    // align that with cargo's `rust-version`
-    #[serde(alias = "trunk-version")]
+    #[serde(alias = "prank-version")]
     #[schemars(with = "VersionReqSchema")]
-    pub trunk_version: VersionReq,
+    pub prank_version: VersionReq,
 
     // the dist folder must be relative
     #[serde(default)]

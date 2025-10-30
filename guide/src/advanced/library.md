@@ -2,7 +2,7 @@
 # Library crate
 
 Aside from having a `main` function, it is also possible to up your project as a `cdylib` project. In order to do that,
-add the following to your `Cargo.toml`:
+add the following to your `Spago.toml`:
 
 ```toml
 [lib]

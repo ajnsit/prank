@@ -1,8 +1,0 @@
-[package]
-name = "xtask"
-version = "0.1.0"
-authors = ["Jens Reimann <ctron@dentrassi.de>"]
-edition = "2021"
-
-[dependencies]
-time = "0.3"

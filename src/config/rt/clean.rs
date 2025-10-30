@@ -8,8 +8,8 @@ use std::ops::Deref;
 #[derive(Clone, Debug)]
 pub struct RtcClean {
     pub core: RtcCore,
-    /// Optionally perform a cargo clean.
-    pub cargo: bool,
+    /// Optionally remove the .spago dir.
+    pub spago: bool,
     /// Optionally clean tools.
     pub tools: bool,
 }
@@ -41,7 +41,7 @@ impl RtcClean {
             core: core_config,
             clean:
                 Clean {
-                    cargo,
+                    spago,
                     // We ignore the legacy `dist` field from the configuration for now.
                     // We have a warning in place, and at some point remove this field.
                     dist: _,
@@ -51,7 +51,7 @@ impl RtcClean {
 
         let core = RtcCore::new(core_config, core_opts)?;
 
-        Ok(Self { core, cargo, tools })
+        Ok(Self { core, spago, tools })
     }
 }
 

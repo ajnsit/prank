@@ -18,22 +18,22 @@ use tokio::sync::broadcast;
 #[command(next_help_heading = "Watch")]
 pub struct Watch {
     /// Watch specific file(s) or folder(s) [default: build target parent folder]
-    #[arg(short, long, value_name = "path", env = "TRUNK_WATCH_WATCH")]
+    #[arg(short, long, value_name = "path", env = "PRANK_WATCH_WATCH")]
     pub watch: Option<Vec<PathBuf>>,
     /// Globs to ignore [default: []]
-    #[arg(short, long, value_name = "path", env = "TRUNK_WATCH_IGNORE")]
+    #[arg(short, long, value_name = "path", env = "PRANK_WATCH_IGNORE")]
     pub ignore: Option<Vec<String>>,
     /// Using polling mode for detecting changes
-    #[arg(long, env = "TRUNK_WATCH_POLL")]
+    #[arg(long, env = "PRANK_WATCH_POLL")]
     pub poll: bool,
     /// The polling interval, when polling is enabled
-    #[arg(long, env = "TRUNK_WATCH_POLL_INTERVAL", default_value = "5s")]
+    #[arg(long, env = "PRANK_WATCH_POLL_INTERVAL", default_value = "5s")]
     pub poll_interval: ConfigDuration,
     /// Allow enabling a cooldown, discarding all change events during the build
-    #[arg(long, env = "TRUNK_WATCH_ENABLE_COOLDOWN")]
+    #[arg(long, env = "PRANK_WATCH_ENABLE_COOLDOWN")]
     pub enable_cooldown: bool,
     /// Clear the screen before each run
-    #[arg(short, long = "clear", env = "TRUNK_WATCH_CLEAR")]
+    #[arg(short, long = "clear", env = "PRANK_WATCH_CLEAR")]
     pub clear_screen: bool,
 
     // NOTE: flattened structures come last

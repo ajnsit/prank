@@ -412,6 +412,9 @@ main();"#
 
     /// Check if any of the changed paths are PureScript or FFI files.
     fn should_run_spago_build(&self) -> bool {
+        if self.changed_paths.is_empty() {
+            return true;
+        }
         for path in &self.changed_paths {
             if path.extension().is_some_and(|ext| ext == "purs") {
                 return true;

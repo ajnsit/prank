@@ -14,7 +14,7 @@ use clap::Args;
 use std::{net::IpAddr, path::PathBuf, sync::Arc};
 use tokio::{select, sync::broadcast};
 
-/// Build, watch & serve the Rust WASM app and all of its assets.
+/// Build, watch & serve the PureScript Web app and all of its assets.
 #[derive(Clone, Args)]
 #[command(name = "serve")]
 #[command(next_help_heading = "Serve")]

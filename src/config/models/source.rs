@@ -10,6 +10,8 @@ use std::{
 pub enum Source {
     /// A configuration file (maybe TOML or YAML)
     File(PathBuf),
+    /// Default configuration as configured in memory
+    Default,
 }
 
 const CANDIDATES: &[&str] = &[
@@ -29,7 +31,7 @@ impl Source {
                 return Ok(Source::File(file));
             }
         }
-        bail!("Unable to find any Prank configuration");
+        Ok(Source::Default)
     }
 
     /// Load the configuration from the source.
@@ -38,6 +40,7 @@ impl Source {
     pub async fn load(self) -> anyhow::Result<Configuration> {
         match self {
             Self::File(file) => load_from(&file),
+            Source::Default => Ok(Configuration::default()),
         }
         .and_then(|mut cfg| {
             cfg.migrate()?;

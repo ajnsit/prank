@@ -12,7 +12,7 @@ use clap::Args;
 use std::{path::PathBuf, sync::Arc};
 use tokio::sync::broadcast;
 
-/// Build & watch the Rust WASM app and all of its assets.
+/// Build & watch the PureScript web app and all of its assets.
 #[derive(Clone, Args)]
 #[command(name = "watch")]
 #[command(next_help_heading = "Watch")]

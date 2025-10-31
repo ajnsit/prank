@@ -161,7 +161,7 @@ impl HtmlPipeline {
             {
                 assets.push(PrankAsset::PureScriptApp(app));
             } else {
-                tracing::warn!("no rust project found")
+                tracing::warn!("no PureScript project found")
             };
         }
 
